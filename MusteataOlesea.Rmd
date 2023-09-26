@@ -1,0 +1,414 @@
+---
+title: "MusteataOlesea"
+author: "Oleg Arnaut"
+date: "2023-09-25"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = TRUE)
+
+knitr::opts_chunk$set(dpi=300) 
+knitr::opts_chunk$set(fig.width=7, fig.height=5) 
+
+library(tidyverse)
+library(forcats)
+library(readxl)
+library(openxlsx)
+library(flextable)
+library(dplyr)
+library(gtsummary)
+library(smd)
+
+
+library(ggstatsplot)
+
+# Define a function for grouped boxplots with nonparametric statistics
+create_grouped_boxplot <- function(data, x_var, y_var, x_name, y_name) {
+  plt <- ggbetweenstats(
+    data = data,
+    x = {{ x_var }},
+    y = {{ y_var }},
+    type = "nonparametric"
+  )
+
+  plt <- plt + 
+    labs(
+      x = x_name,
+      y = y_name,
+      #title = paste("Distribution of", quo_name(y_var), "by", quo_name(x_var))
+    ) + 
+    theme(
+      text = element_text(family = "Roboto", size = 8, color = "black"),
+      plot.title = element_text(
+        family = "Lobster Two", 
+        size = 12,
+        face = "bold",
+        color = "#2a475e"
+      ),
+      plot.subtitle = element_text(
+        family = "Roboto", 
+        size = 12, 
+        face = "bold",
+        color = "#1b2838"
+      ),
+      plot.title.position = "plot",
+      axis.text = element_text(size = 10, color = "black"),
+      axis.title = element_text(size = 12)
+    )
+
+  plt <- plt  +
+    #ylim(0, max(data$y_var) + 5)+
+    theme(
+      axis.ticks = element_blank(),
+      axis.line = element_line(colour = "grey50"),
+      panel.grid = element_line(color = "#b4aea9"),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y = element_line(linetype = "dashed"),
+      panel.background = element_rect(fill = "#fbf9f4", color = "#fbf9f4"),
+      plot.background = element_rect(fill = "#fbf9f4", color = "#fbf9f4")
+    )
+  
+  return(plt)
+}
+
+
+
+```
+
+# Dataset formation
+
+```{r}
+
+df <- read_excel("Новая форма (Ответы).xlsx")
+
+df %>% 
+  select(!c("Отметка времени", "ID")) %>%  
+    mutate(across(c(Lotul, Forma, Genul), function(x) as.factor(x))) %>% 
+    mutate(across(where(is.character), as.numeric)) -> df  
+
+names(df)
+
+```
+
+
+# Caracteristica generala cohortei
+
+
+```{r}
+df %>% 
+  select(Lotul, Forma, Genul, "Virsta, ani", 
+         "Hipertrofie pre, %", "Hipertrofie post , %",  "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %",
+         "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+         "M pre", "M post", "M 1 luna", "M 3 luni",
+         "II pre", "II post", "II 1 luna" , "II 3 luni",
+         "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+         "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+         "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+         "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+         "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni", "IPPG")  %>%
+  tbl_summary(statistic = list(all_categorical() ~ "{n} ({p}%)",
+                               all_continuous() ~ "{mean} ({sd})\n {median} ({IQR})\n {min} {max} "),
+              digits = list(all_categorical() ~ c(0, 1),
+                            all_continuous()  ~ c(1, 1)),
+              type = list(Lotul ~ "categorical",
+                          Forma  ~ "categorical"
+                          ))%>%
+  modify_header(label = "**Variable**") %>%
+  modify_caption("Participant characteristics") %>%
+  bold_labels()%>%add_ci()
+
+```
+
+# Evaluarea comparativa intre loturile de studiu
+
+
+```{r}
+
+df %>% 
+  select(Lotul, Forma, Genul, "Virsta, ani", 
+         "Hipertrofie pre, %", "Hipertrofie post , %",  "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %",
+         "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+         "M pre", "M post", "M 1 luna", "M 3 luni",
+         "II pre", "II post", "II 1 luna" , "II 3 luni",
+         "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+         "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+         "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+         "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+         "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni", "IPPG")  %>%
+  tbl_summary(by = Lotul,
+              statistic = list(all_categorical() ~ "{n} ({p}%)",
+                               all_continuous() ~ "{mean} ({sd})\n {median} ({IQR})\n {min} {max} "),
+              digits = list(all_categorical() ~ c(0, 1),
+                            all_continuous()  ~ c(1, 1)),
+              type = list(Lotul ~ "categorical",
+                          Forma  ~ "categorical"
+                          ))%>%
+  modify_header(label = "**Variable**") %>%
+  modify_caption("Participant characteristics") %>%
+  bold_labels()%>%add_ci()%>%add_p()
+
+```
+
+
+# Vizualizarea evaluarii comparative intre loturile de studiu
+
+```{r}
+
+library(rlang)
+library(purrr)
+
+variables <- c("Virsta, ani", 
+               "Hipertrofie pre, %", "Hipertrofie post , %",  "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %",
+               "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+               "M pre", "M post", "M 1 luna", "M 3 luni",
+               "II pre", "II post", "II 1 luna" , "II 3 luni",
+               "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+               "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+               "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+               "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+               "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni", "IPPG")
+
+names <-     c("Virsta, ani", 
+               "Hipertrofie pre, %", "Hipertrofie post, %",  "Hipertrofie 1 luna, %", "Hipertrofie 3 luni, %",
+               "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+               "M pre", "M post", "M 1 luna", "M 3 luni",
+               "II pre", "II post", "II 1 luna" , "II 3 luni",
+               "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+               "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+               "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+               "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+               "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni", "IPPG")
+
+for (i in seq_along(variables)) {
+  element1 <- variables[[i]]
+  element2 <- names[[i]]
+  
+  plot <- create_grouped_boxplot(df, "Lotul", !!ensym(element1), "Lotul", element2)
+  print(plot)
+}
+
+```
+
+
+
+```{r}
+
+ggbarstats(
+  data = df,
+  x = Lotul,
+  y = Forma
+)
+
+```
+
+
+```{r}
+
+ggbarstats(
+  data = df,
+  x = Lotul,
+  y = Genul
+)
+
+```
+
+#Corelation for control group
+
+```{r fig.width=25, fig.height=16}
+
+library(corrplot)
+# matrix of the p-value of the correlation
+
+cor.mtest <- function(mat, ...) {
+    mat <- as.matrix(mat)
+    n <- ncol(mat)
+    p.mat<- matrix(NA, n, n)
+    diag(p.mat) <- 0
+    for (i in 1:(n - 1)) {
+        for (j in (i + 1):n) {
+            tmp <- cor.test(mat[, i], mat[, j], ...)
+            p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
+        }
+    }
+  colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+  p.mat
+}
+
+
+df_c <-df %>%
+  filter(Lotul == "Control")
+
+df_s <-df %>%
+  filter(Lotul != "Control")
+
+
+
+p.mat <- cor.mtest(df_c %>%
+  select("Virsta, ani", 
+               "Hipertrofie pre, %", "Hipertrofie post , %",  "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %",
+               "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+               "M pre", "M post", "M 1 luna", "M 3 luni",
+               "II pre", "II post", "II 1 luna" , "II 3 luni",
+               "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+               "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+               "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+               "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+               "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni", "IPPG"))
+
+M<-cor(df_c %>%
+  select("Virsta, ani", 
+               "Hipertrofie pre, %", "Hipertrofie post , %",  "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %",
+               "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+               "M pre", "M post", "M 1 luna", "M 3 luni",
+               "II pre", "II post", "II 1 luna" , "II 3 luni",
+               "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+               "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+               "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+               "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+               "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni", "IPPG"))
+
+
+
+corrplot(M, addCoef.col = 1,
+        number.cex = 1, tl.col = "black", tl.cex = 1.3, cl.cex = 1.5, tl.srt=45,
+        method = "color", p.mat = p.mat, sig.level = 0.01, insig = "blank")
+
+```
+
+
+# Corelation in studiu group
+
+
+```{r fig.width=25, fig.height=16}
+
+
+
+p.mat <- cor.mtest(df_s %>%
+  select("Virsta, ani", 
+               "Hipertrofie pre, %", "Hipertrofie post , %",  "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %",
+               "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+               "M pre", "M post", "M 1 luna", "M 3 luni",
+               "II pre", "II post", "II 1 luna" , "II 3 luni",
+               "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+               "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+               "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+               "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+               "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni", "IPPG"))
+
+M<-cor(df_s %>%
+  select("Virsta, ani", 
+               "Hipertrofie pre, %", "Hipertrofie post , %",  "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %",
+               "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+               "M pre", "M post", "M 1 luna", "M 3 luni",
+               "II pre", "II post", "II 1 luna" , "II 3 luni",
+               "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+               "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+               "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+               "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+               "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni", "IPPG"))
+
+
+
+
+corrplot(M, addCoef.col = 1,
+        number.cex = 1, tl.col = "black", tl.cex = 1.3, cl.cex = 1.5, tl.srt=45,
+        method = "color", p.mat = p.mat, sig.level = 0.01, insig = "blank")
+
+```
+
+
+
+
+
+#Evaluarea comparativa in dinamica a paramerilor
+
+
+## Lotul de control
+
+```{r}
+
+# mydata <- data.frame(
+#   Group = rep(c("A", "B"), each = 50),
+#   Value = c(rnorm(50, mean = 10, sd = 2), rnorm(50, mean = 12, sd = 2))
+# )
+# 
+# 
+# mydata
+
+
+```
+
+
+## Lotul de studiu
+
+```{r fig.width=9, fig.height=6, dpi=300}
+
+
+library(rstantools)
+
+df_c %>%
+  select("Hipertrofie pre, %", "Hipertrofie post , %",  "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %")%>%
+  gather(key = "Group", value = "Value") -> long_df
+
+
+desired_order <- c("Hipertrofie pre, %", "Hipertrofie post , %", "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %")
+long_df$Group <- factor(long_df$Group, levels = desired_order)
+
+ ggwithinstats(
+   data = long_df,
+   x = Group,
+   y = Value,
+   plot.type = "box",
+   xlab            = "Evolutie",
+   ylab            = "Hipertrofie",
+   facet_text_size = 20
+ )  +
+  theme(
+    # Adjust the size of different text elements
+    text = element_text(
+      size = 14,           # Set the base text size
+      face = "bold"        # Set the font style (bold)
+    ),
+    # Adjust the size of specific text elements
+    plot.title = element_text(size = 18, face = "bold"),  # Title
+    axis.title = element_text(size = 14),                # Axis titles
+    axis.text = element_text(size = 12),                 # Axis labels
+    legend.title = element_text(size = 14),              # Legend title
+    legend.text = element_text(size = 12)                # Legend labels
+  )
+
+```
+
+
+```{r}
+
+
+ggwithinstats(
+  data = long_df,
+  x = Group,
+  y = Value,
+  order = category_order,
+  violin.args = list(width = 0), # remove violin plot
+  xlab = "Evolutie",
+  ylab = "Hipertrofie",
+  facet_text_size = 12
+) +
+theme(
+  # Adjust the size of different text elements
+  text = element_text(
+    size = 14,        # Set the base text size
+    face = "bold"     # Set the font style (bold)
+  ),
+  # Adjust the size of specific text elements
+  plot.title = element_text(size = 18, face = "bold"),  # Title
+  axis.title = element_text(size = 14),                # Axis titles
+  axis.text = element_text(size = 12),                 # Axis labels
+  legend.title = element_text(size = 14),              # Legend title
+  legend.text = element_text(size = 12)                # Legend labels
+)
+
+```
+
