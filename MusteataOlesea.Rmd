@@ -328,23 +328,7 @@ corrplot(M, addCoef.col = 1,
 
 ## Lotul de control
 
-```{r}
-
-# mydata <- data.frame(
-#   Group = rep(c("A", "B"), each = 50),
-#   Value = c(rnorm(50, mean = 10, sd = 2), rnorm(50, mean = 12, sd = 2))
-# )
-# 
-# 
-# mydata
-
-
-```
-
-
-## Lotul de studiu
-
-```{r fig.width=9, fig.height=6, dpi=300}
+```{r fig.width=8, fig.height=6, dpi=300}
 
 
 library(rstantools)
@@ -364,6 +348,7 @@ long_df$Group <- factor(long_df$Group, levels = desired_order)
    plot.type = "box",
    xlab            = "Evolutie",
    ylab            = "Hipertrofie",
+   title = "Evolutie pentru hipertrofie lotul de control", # de inlaturat in teza
    facet_text_size = 20
  )  +
   theme(
@@ -383,32 +368,244 @@ long_df$Group <- factor(long_df$Group, levels = desired_order)
 ```
 
 
-```{r}
+```{r fig.width=8, fig.height=6, dpi=300}
 
 
-ggwithinstats(
-  data = long_df,
-  x = Group,
-  y = Value,
-  order = category_order,
-  violin.args = list(width = 0), # remove violin plot
-  xlab = "Evolutie",
-  ylab = "Hipertrofie",
-  facet_text_size = 12
-) +
-theme(
-  # Adjust the size of different text elements
-  text = element_text(
-    size = 14,        # Set the base text size
-    face = "bold"     # Set the font style (bold)
-  ),
-  # Adjust the size of specific text elements
-  plot.title = element_text(size = 18, face = "bold"),  # Title
-  axis.title = element_text(size = 14),                # Axis titles
-  axis.text = element_text(size = 12),                 # Axis labels
-  legend.title = element_text(size = 14),              # Legend title
-  legend.text = element_text(size = 12)                # Legend labels
-)
+
+# "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+# "M pre", "M post", "M 1 luna", "M 3 luni",
+# "II pre", "II post", "II 1 luna" , "II 3 luni",
+# "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+# "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+# "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+# "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+# "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni"
+
+library(rstantools)
+
+df_c %>%
+  select("IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni")%>%
+  gather(key = "Group", value = "Value") -> long_df
+
+
+desired_order <- c("IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni")
+long_df$Group <- factor(long_df$Group, levels = desired_order)
+
+ ggwithinstats(
+   data = long_df,
+   x = Group,
+   y = Value,
+   plot.type = "box",
+   xlab            = "Evolutie",
+   ylab            = "IEM",
+   title = "Evolutie pentru IEM lotul de control", # de inlaturat in teza
+   facet_text_size = 20
+ )  +
+  theme(
+    # Adjust the size of different text elements
+    text = element_text(
+      size = 14,           # Set the base text size
+      face = "bold"        # Set the font style (bold)
+    ),
+    # Adjust the size of specific text elements
+    plot.title = element_text(size = 18, face = "bold"),  # Title
+    axis.title = element_text(size = 14),                # Axis titles
+    axis.text = element_text(size = 12),                 # Axis labels
+    legend.title = element_text(size = 14),              # Legend title
+    legend.text = element_text(size = 12)                # Legend labels
+  )
 
 ```
 
+
+```{r fig.width=8, fig.height=6, dpi=300}
+
+
+
+# "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+# "M pre", "M post", "M 1 luna", "M 3 luni",
+# "II pre", "II post", "II 1 luna" , "II 3 luni",
+# "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+# "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+# "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+# "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+# "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni"
+
+library(rstantools)
+
+df_c %>%
+  select("M pre", "M post", "M 1 luna", "M 3 luni")%>%
+  gather(key = "Group", value = "Value") -> long_df
+
+
+desired_order <- c("M pre", "M post", "M 1 luna", "M 3 luni")
+long_df$Group <- factor(long_df$Group, levels = desired_order)
+
+ ggwithinstats(
+   data = long_df,
+   x = Group,
+   y = Value,
+   plot.type = "box",
+   xlab            = "Evolutie",
+   ylab            = "M",
+   title = "Evolutie pentru M lotul de control", # de inlaturat in teza
+   facet_text_size = 20
+ )  +
+  theme(
+    # Adjust the size of different text elements
+    text = element_text(
+      size = 14,           # Set the base text size
+      face = "bold"        # Set the font style (bold)
+    ),
+    # Adjust the size of specific text elements
+    plot.title = element_text(size = 18, face = "bold"),  # Title
+    axis.title = element_text(size = 14),                # Axis titles
+    axis.text = element_text(size = 12),                 # Axis labels
+    legend.title = element_text(size = 14),              # Legend title
+    legend.text = element_text(size = 12)                # Legend labels
+  )
+
+```
+
+
+## Lotul de studiu
+
+```{r fig.width=8, fig.height=6, dpi=300}
+
+
+library(rstantools)
+
+df_s %>%
+  select("Hipertrofie pre, %", "Hipertrofie post , %",  "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %")%>%
+  gather(key = "Group", value = "Value") -> long_df
+
+
+desired_order <- c("Hipertrofie pre, %", "Hipertrofie post , %", "Hipertrofie 1 luna , %", "Hipertrofie 3 luni, %")
+long_df$Group <- factor(long_df$Group, levels = desired_order)
+
+ ggwithinstats(
+   data = long_df,
+   x = Group,
+   y = Value,
+   plot.type = "box",
+   xlab            = "Evolutie",
+   ylab            = "Hipertrofie",
+   title = "Evolutie pentru hipertrofie lotul de studiu", # de inlaturat in teza
+   facet_text_size = 20
+ )  +
+  theme(
+    # Adjust the size of different text elements
+    text = element_text(
+      size = 14,           # Set the base text size
+      face = "bold"        # Set the font style (bold)
+    ),
+    # Adjust the size of specific text elements
+    plot.title = element_text(size = 18, face = "bold"),  # Title
+    axis.title = element_text(size = 14),                # Axis titles
+    axis.text = element_text(size = 12),                 # Axis labels
+    legend.title = element_text(size = 14),              # Legend title
+    legend.text = element_text(size = 12)                # Legend labels
+  )
+
+```
+
+
+```{r fig.width=8, fig.height=6, dpi=300}
+
+
+
+# "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+# "M pre", "M post", "M 1 luna", "M 3 luni",
+# "II pre", "II post", "II 1 luna" , "II 3 luni",
+# "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+# "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+# "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+# "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+# "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni"
+
+library(rstantools)
+
+df_s %>%
+  select("IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni")%>%
+  gather(key = "Group", value = "Value") -> long_df
+
+
+desired_order <- c("IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni")
+long_df$Group <- factor(long_df$Group, levels = desired_order)
+
+ ggwithinstats(
+   data = long_df,
+   x = Group,
+   y = Value,
+   plot.type = "box",
+   xlab            = "Evolutie",
+   ylab            = "IEM",
+   title = "Evolutie pentru IEM lotul de studiu", # de inlaturat in teza
+   facet_text_size = 20
+ )  +
+  theme(
+    # Adjust the size of different text elements
+    text = element_text(
+      size = 14,           # Set the base text size
+      face = "bold"        # Set the font style (bold)
+    ),
+    # Adjust the size of specific text elements
+    plot.title = element_text(size = 18, face = "bold"),  # Title
+    axis.title = element_text(size = 14),                # Axis titles
+    axis.text = element_text(size = 12),                 # Axis labels
+    legend.title = element_text(size = 14),              # Legend title
+    legend.text = element_text(size = 12)                # Legend labels
+  )
+
+```
+
+
+
+```{r fig.width=8, fig.height=6, dpi=300}
+
+
+
+# "IEM pre", "IEM post", "IEM 1 luna", "IEM 3 luni",            
+# "M pre", "M post", "M 1 luna", "M 3 luni",
+# "II pre", "II post", "II 1 luna" , "II 3 luni",
+# "ISG pre", "ISG post", "ISG 1 luna", "ISG 3 luni",
+# "IG pre", "IG post", "IG 1 luna", "IG 3 luni",
+# "ALF pre", "ALF post", "ALF 1 luna", "ALF 3 luni",             
+# "ACF pre", "ACF post",  "ACF 1 luna", "ACF 3 luni",            
+# "AHF pre", "AHF post", "AHF 1 luna", "AHF 3 luni"
+
+library(rstantools)
+
+df_s %>%
+  select("M pre", "M post", "M 1 luna", "M 3 luni")%>%
+  gather(key = "Group", value = "Value") -> long_df
+
+
+desired_order <- c("M pre", "M post", "M 1 luna", "M 3 luni")
+long_df$Group <- factor(long_df$Group, levels = desired_order)
+
+ ggwithinstats(
+   data = long_df,
+   x = Group,
+   y = Value,
+   plot.type = "box",
+   xlab            = "Evolutie",
+   ylab            = "M",
+   title = "Evolutie pentru M lotul de studiu", # de inlaturat in teza
+   facet_text_size = 20
+ )  +
+  theme(
+    # Adjust the size of different text elements
+    text = element_text(
+      size = 14,           # Set the base text size
+      face = "bold"        # Set the font style (bold)
+    ),
+    # Adjust the size of specific text elements
+    plot.title = element_text(size = 18, face = "bold"),  # Title
+    axis.title = element_text(size = 14),                # Axis titles
+    axis.text = element_text(size = 12),                 # Axis labels
+    legend.title = element_text(size = 14),              # Legend title
+    legend.text = element_text(size = 12)                # Legend labels
+  )
+
+```
