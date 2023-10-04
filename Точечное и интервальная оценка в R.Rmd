@@ -1,0 +1,527 @@
+---
+title: "CI"
+author: "Oleg Arnaut"
+date: "2023-10-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Точечные оценки
+
+## Зачем нужна визуализация?
+
+```{r, fig.width=10, fig.height=5}
+
+
+# Create a 2x2 layout for the plots
+par(mfrow=c(2, 2))
+
+# Plot Normal Distribution
+hist(data_normal, breaks = 30, col = 'blue', main = 'Normal Distribution (μ=50, σ=10)', xlab = 'Value', ylab = 'Frequency')
+
+# Plot Uniform Distribution
+hist(data_uniform, breaks = 30, col = 'green', main = 'Uniform Distribution (μ=50, σ=10)', xlab = 'Value', ylab = 'Frequency')
+
+# Plot Bimodal Distribution
+hist(data_bimodal, breaks = 30, col = 'red', main = 'Bimodal Distribution (μ=50, σ=10)', xlab = 'Value', ylab = 'Frequency')
+
+# Generate data for Exponential Distribution with a similar mean and sd
+mean_exp <- 50
+sd_exp <- 10
+lambda_exp <- 1 / mean_exp
+
+data_exponential <- rexp(1000, rate = lambda_exp)
+
+# Plot Exponential Distribution
+hist(data_exponential, breaks = 30, col = 'purple', main = 'Exponential Distribution (μ=50, σ=10)', xlab = 'Value', ylab = 'Frequency')
+
+# Reset the layout
+par(mfrow=c(1, 1))
+
+
+```
+
+
+# Доверительные интервалы
+
+## Квантили (напомнить)
+
+```{r}
+
+
+```
+
+## Доверительный интервал (количественная переменная, нормальное распределение)
+
+```{r}
+
+sample_size <-  100 # Количество респондентов прошедших терапию
+Hg_improve  <-  20  # Истинное изменение уровня Hg
+Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
+
+alpha <- 0.05       # порог
+x_lower <- qnorm(alpha/2)    # нижняя граница 
+x_upper <- qnorm(1-alpha/2)  # верхняя граница
+
+num_samples <- 10000  #  Сколько раз мы набираем выборку?
+
+missed <- sapply(1:num_samples, function (k) {
+   
+  Hg_change <- rnorm(sample_size, Hg_improve, Hg_sd)  # Формируем выборку
+  lower_bound <- mean(Hg_change) + x_lower*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем нижнюю границу доверительного интервала
+  upper_bound <- mean(Hg_change) + x_upper*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем верхнюю границу доверительного интервала
+  
+  true_or_false <- ifelse((lower_bound<Hg_improve) & (upper_bound>Hg_improve), 'Captured', 'Missed') # фиксируем результат
+
+})
+
+
+table(missed)
+
+
+```
+
+
+## Доверительный интервал (количественная переменная, геометрическое распределение)
+
+```{r}
+
+sample_size <-  70 # Количество респондентов прошедших терапию
+avg_days    <-  7 # Истинная продолжительность болезни
+
+
+alpha <- 0.05       # порог
+x_lower <- qnorm(alpha/2)    # нижняя граница 
+x_upper <- qnorm(1-alpha/2)  # верхняя граница
+
+num_samples <- 10000  #  Сколько раз мы набираем выборку?
+
+missed <- sapply(1:num_samples, function (k) {
+   
+  my_group_deseases_duration <- rgeom(sample_size, 1/(avg_days+1)) # Формируем выборку 
+  
+  lower_bound <- mean(my_group_deseases_duration) + x_lower*sd(my_group_deseases_duration)/sqrt(sample_size)  # По выборке оцениваем нижнюю границу доверительного интервала
+  upper_bound <- mean(my_group_deseases_duration) + x_upper*sd(my_group_deseases_duration)/sqrt(sample_size)  # По выборке оцениваем верхнюю границу доверительного интервала
+  
+  true_or_false <- ifelse((lower_bound<avg_days) & (upper_bound>avg_days), 'Captured', 'Missed') # фиксируем результат
+
+})
+
+
+table(missed)
+
+
+```
+
+
+
+
+## От чего зависит ширина доверительного интервала?
+
+## Доверительный интервал для доли
+
+
+```{r}
+#https://www.codecamp.ru/blog/confidence-interval-in-r/
+#input sample size and sample proportion
+n <- 100
+p <- .56
+
+#calculate margin of error
+margin <- qnorm(0.975)*sqrt(p*(1-p)/n)
+
+#calculate lower and upper bounds of confidence interval
+low <- p - margin
+low
+
+
+
+high <- p + margin
+high
+
+
+```
+
+## Доверительный интервал для разницы долей (зависимые и независимые выборки)
+
+```{r}
+#https://www.codecamp.ru/blog/confidence-interval-in-r/
+
+#input sample sizes and sample proportions
+n1 <- 100
+p1 <- .62
+
+n2 <- 100
+p2 <- .46
+
+#calculate margin of error
+margin <- qnorm(0.975)*sqrt(p1*(1-p1)/n1 + p2*(1-p2)/n2)
+
+#calculate lower and upper bounds of confidence interval
+low <- (p1-p2) - margin
+low
+
+high <- (p1-p2) + margin
+high
+
+
+#https://rpubs.com/AllaT/conf-ints ДОБАВИТЬ !!!!
+
+```
+
+
+
+## Доверительный интервал для среднего
+
+```{r}
+#https://www.codecamp.ru/blog/confidence-interval-in-r/
+
+#input sample size, sample mean, and sample standard deviation
+n <- 25
+xbar <- 300 
+s <- 18.5
+
+#calculate margin of error
+margin <- qt(0.975,df=n-1)*s/sqrt(n)
+
+#calculate lower and upper bounds of confidence interval
+low <- xbar - margin
+low
+
+
+high <- xbar + margin
+high
+
+
+  
+  
+```
+
+
+
+
+## Доверительный интервал для разницы средних (зависимые и независимые выборки)
+
+```{r}
+#https://www.codecamp.ru/blog/confidence-interval-in-r/
+
+
+
+
+#input sample size, sample mean, and sample standard deviation
+n1 <- 30
+xbar1 <- 310 
+s1 <- 18.5
+
+n2 <- 30
+xbar2 <- 300
+s2 <- 16.4
+
+#calculate pooled variance
+sp = ((n1-1)*s1^2 + (n2-1)*s2^2) / (n1+n2-2)
+
+#calculate margin of error
+margin <- qt(0.975,df=n1+n2-1)*sqrt(sp/n1 + sp/n2)
+
+#calculate lower and upper bounds of confidence interval
+low <- (xbar1-xbar2) - margin
+low
+
+
+
+high <- (xbar1-xbar2) + margin
+high
+
+
+
+```
+
+```{r}
+
+# Install and load the necessary libraries if not already installed
+# install.packages("shiny")
+
+library(shiny)
+library(dplyr)
+library(ggplot2)
+
+# Define the UI for the Shiny app
+ui <- fluidPage(
+  titlePanel("Confidence Interval for Two Means"),
+
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("sample1_mean", "Sample 1 Mean:", value = 0),
+      numericInput("sample1_sd", "Sample 1 Standard Deviation:", value = 1),
+      numericInput("sample1_size", "Sample 1 Size:", value = 30),
+      numericInput("sample2_mean", "Sample 2 Mean:", value = 0),
+      numericInput("sample2_sd", "Sample 2 Standard Deviation:", value = 1),
+      numericInput("sample2_size", "Sample 2 Size:", value = 30),
+      sliderInput("confidence_level", "Confidence Level:", min = 0.01, max = 0.99, value = 0.95, step = 0.01),
+      actionButton("calculate_button", "Calculate")
+    ),
+
+    mainPanel(
+      plotOutput("result_plot"),
+      verbatimTextOutput("result_text")
+    )
+  )
+)
+
+# Define the server logic for the Shiny app
+server <- function(input, output) {
+  observeEvent(input$calculate_button, {
+    # Generate random data for two samples based on user inputs
+    sample1 <- rnorm(input$sample1_size, mean = input$sample1_mean, sd = input$sample1_sd)
+    sample2 <- rnorm(input$sample2_size, mean = input$sample2_mean, sd = input$sample2_sd)
+    
+    # Calculate the difference between means
+    mean_diff <- mean(sample1) - mean(sample2)
+    
+    # Calculate the standard error of the difference
+    se_diff <- sqrt((var(sample1) / length(sample1)) + (var(sample2) / length(sample2)))
+    
+    # Calculate the degrees of freedom
+    df <- (var(sample1) / length(sample1) + var(sample2) / length(sample2))^2 / 
+      ((1 / (length(sample1) - 1)) * (var(sample1) / length(sample1))^2 / (length(sample1) - 1) + 
+         (1 / (length(sample2) - 1)) * (var(sample2) / length(sample2))^2 / (length(sample2) - 1))
+    
+    # Calculate the t-score based on the confidence level
+    t_score <- qt((1 + input$confidence_level) / 2, df)
+    
+    # Calculate the margin of error
+    margin_error <- t_score * se_diff
+    
+    # Calculate the confidence interval
+    lower_ci <- mean_diff - margin_error
+    upper_ci <- mean_diff + margin_error
+    
+    # Create a histogram plot
+    plot_data <- data.frame(Sample = c(rep("Sample 1", input$sample1_size), rep("Sample 2", input$sample2_size)),
+                            Value = c(sample1, sample2))
+    
+    result_plot <- ggplot(plot_data, aes(x = Value, fill = Sample)) +
+      geom_histogram(binwidth = 0.5, position = "identity", alpha = 0.6) +
+      geom_vline(xintercept = mean_diff, linetype = "dashed", color = "red", size = 1) +
+      labs(title = "Histogram of Two Samples with Confidence Interval",
+           x = "Value", y = "Frequency",
+           subtitle = paste("Confidence Interval for Difference of Means:",
+                             round(lower_ci, 2), "-", round(upper_ci, 2))) +
+      scale_fill_manual(values = c("Sample 1" = "blue", "Sample 2" = "green")) +
+      theme_minimal()
+    
+    # Display the result text
+    result_text <- paste("Confidence Interval for Difference of Means:",
+                         round(lower_ci, 2), "-", round(upper_ci, 2))
+    
+    # Update the output
+    output$result_plot <- renderPlot({ result_plot })
+    output$result_text <- renderText({ result_text })
+  })
+}
+
+# Run the Shiny app
+shinyApp(ui, server)
+
+
+```
+
+
+
+## Доверительный интервал для дисперсии
+
+
+## Односторонние доверительные интервалы (исследования неменьшей эффективности или превосходства)
+
+```{r}
+
+sample_size <-  100 # Количество респондентов прошедших терапию
+Hg_improve  <-  20  # Истинное изменение уровня Hg
+Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
+
+alpha <- 0.05       # порог
+x_lower <- qnorm(alpha)    # нижняя граница 
+x_upper <- qnorm(1)  # верхняя граница
+
+num_samples <- 10000  #  Сколько раз мы набираем выборку?
+
+missed <- sapply(1:num_samples, function (k) {
+   
+  Hg_change <- rnorm(sample_size, Hg_improve, Hg_sd)  # Формируем выборку
+  lower_bound <- mean(Hg_change) + x_lower*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем нижнюю границу доверительного интервала
+  upper_bound <- mean(Hg_change) + x_upper*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем верхнюю границу доверительного интервала
+  
+  true_or_false <- ifelse((lower_bound<Hg_improve) & (upper_bound>Hg_improve), 'Captured', 'Missed') # фиксируем результат
+
+})
+
+table(missed)
+
+
+```
+
+
+```{r}
+
+# Load the ggplot2 library if not already loaded
+# install.packages("ggplot2")
+library(ggplot2)
+
+# Generate random data from a normal distribution
+data <- rnorm(1000, mean = 0, sd = 1)
+
+# Create a density plot using ggplot2
+ggplot(data.frame(x = data), aes(x = x)) +
+  geom_density(fill = "blue", color = "black", alpha = 0.5) +
+  labs(title = "Density Plot of Normal Distribution", x = "Value", y = "Density")
+
+
+```
+
+
+
+```{r}
+
+# Install and load the necessary libraries if not already installed
+# install.packages("shiny")
+# install.packages("ggplot2")
+library(shiny)
+library(ggplot2)
+
+# Define the UI for the Shiny app
+ui <- fluidPage(
+  titlePanel("Interactive Normal Distribution Density Plot and CDF with Confidence Intervals"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("mean", "Mean:", min = -5, max = 5, value = 0, step = 0.1),
+      sliderInput("sd", "Standard Deviation:", min = 0.1, max = 3, value = 1, step = 0.1),
+      numericInput("quantile_lower", "Lower Quantile:", min = 0, max = 1, value = 0.025, step = 0.001),
+      numericInput("quantile_upper", "Upper Quantile:", min = 0, max = 1, value = 0.975, step = 0.001),
+      numericInput("x_value", "Calculate PDF/CDF at X:", min = -10, max = 10, value = 0, step = 0.1),
+      textOutput("quantile_difference"),
+      textOutput("pdf_value"),
+      textOutput("cdf_value")
+    ),
+    
+    mainPanel(
+      plotOutput("densityPlot")
+    )
+  )
+)
+
+# Define a function to calculate ideal PDF values
+calculateIdealPDF <- function(x, mean, sd) {
+  pdf_values <- dnorm(x, mean = mean, sd = sd)
+  return(pdf_values)
+}
+
+# Define the server logic for the Shiny app
+server <- function(input, output) {
+  
+  # Create a reactive expression for calculating pdf_values
+  pdf_values <- reactive({
+    # Generate a range of x-values
+    x_range <- seq(-10, 10, by = 0.1)
+    
+    # Calculate ideal PDF values using the function
+    pdf_values <- calculateIdealPDF(x_range, input$mean, input$sd)
+    return(pdf_values)
+  })
+  
+  
+  
+  output$densityPlot <- renderPlot({
+    # Generate a larger sample of data for smoother plot
+    #data <- rnorm(100000, mean = input$mean, sd = input$sd)
+    #x_range <- seq(-10, 10, by = 0.1)
+    
+    pdf_values_data <- pdf_values()
+    
+    
+    #browser()
+    # Calculate quantile values
+    quant_lower <- quantile(pdf_values_data, input$quantile_lower)
+    quant_upper <- quantile(pdf_values_data, input$quantile_upper)
+    
+    # Create a density plot with customized text size and font
+    plot <- ggplot(data.frame(x = seq(-10, 10, by = 0.1), y = pdf_values_data), aes(x = x, y = pdf)) +
+      geom_density(fill = "blue", color = "black", alpha = 0.5) +
+      geom_vline(xintercept = quant_lower, linetype = "dashed", color = "red") +
+      geom_vline(xintercept = quant_upper, linetype = "dashed", color = "green") 
+      geom_vline(xintercept = input$x_value, linetype = "dotted", color = "purple") +  # Add vertical line for X
+      geom_text(
+        aes(x = input$x_value, y = 0.2),
+        label = paste("X =", input$x_value),
+        hjust = -0.2,
+        size = 4
+      ) +
+      labs(
+        title = "Smoothed Density Plot of Normal Distribution",
+        x = "Value",
+        y = "Density",
+        caption = paste(
+          "Lower Quantile:", round(quant_lower, 2),
+          "\nUpper Quantile:", round(quant_upper, 2)
+        )
+      ) +
+      theme_minimal() +  # You can change the theme if you prefer
+      theme(
+        text = element_text(size = 16),  # Adjust text size as needed
+        plot.title = element_text(size = 20, face = "bold"),  # Title font size and style
+        axis.title = element_text(size = 18),  # Axis labels font size
+        axis.text = element_text(size = 14)  # Tick labels font size
+      )
+
+    # Calculate the PDF value at the specified x value
+    pdf_value <- dnorm(input$x_value, mean = input$mean, sd = input$sd)
+    
+    # Calculate the CDF value at the specified x value
+    cdf_value <- pnorm(input$x_value, mean = input$mean, sd = input$sd)
+    
+    # Print the PDF and CDF values
+    print(plot)
+    print(paste("PDF at X:", round(pdf_value, 4)))
+    print(paste("CDF at X:", round(cdf_value, 4)))
+  })
+  
+  output$quantile_difference <- renderText({
+    # Calculate the difference between upper and lower quantiles
+    diff_quantiles <- input$quantile_upper - input$quantile_lower
+    paste("Quantile Difference:", round(diff_quantiles, 2))
+  })
+  
+  output$pdf_value <- renderText({
+    # Calculate the PDF value at the specified x value
+    pdf_value <- dnorm(input$x_value, mean = input$mean, sd = input$sd)
+    paste("PDF at X:", round(pdf_value, 4))
+  })
+  
+  output$cdf_value <- renderText({
+    # Calculate the CDF value at the specified x value
+    cdf_value <- pnorm(input$x_value, mean = input$mean, sd = input$sd)
+    paste("CDF at X:", round(cdf_value, 4))
+  })
+}
+
+# Run the Shiny app
+shinyApp(ui, server)
+
+
+
+
+
+
+
+```
+
+
+## Точные доверительные интервалы
+
+## Бутстреп как метод построения доверительного интервала
+
+
+
