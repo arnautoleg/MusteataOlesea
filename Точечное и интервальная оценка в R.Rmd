@@ -11,6 +11,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Точечные оценки
 
+## Показатели центральной тенденции
+
+## Показатели разброса
+
+## Отношение шансов
+
+## Описательные статистики для категориальных переменных
+
 ## Зачем нужна визуализация?
 
 ```{r, fig.width=10, fig.height=5}
@@ -44,8 +52,178 @@ par(mfrow=c(1, 1))
 
 ```
 
-
 # Доверительные интервалы
+
+```{r}
+
+sample_size <-  100 # Количество респондентов прошедших терапию
+Hg_improve  <-  20  # Истинное изменение уровня Hg
+Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
+
+alpha <- 0.05       # порог
+x_lower <- qnorm(alpha/2)   # нижняя граница 
+x_upper <- qnorm(1-alpha/2)  # верхняя граница
+
+num_samples <- 10000  #  Сколько раз мы набираем выборку?
+
+missed <- sapply(1:num_samples, function (k) {
+
+  Hg_change <- rnorm(sample_size, Hg_improve, Hg_sd)  # Формируем выборку
+  lower_bound <- mean(Hg_change) + x_lower*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем нижнюю границу доверительного интервала
+  upper_bound <- mean(Hg_change) + x_upper*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем верхнюю границу доверительного интервала
+
+  true_or_false <- ifelse((lower_bound<Hg_improve) & (upper_bound>Hg_improve), 'Captured', 'Missed') # фиксируем результат
+
+})
+
+table(missed)
+
+
+
+
+# Sample data (replace this with your own dataset)
+set.seed(123)
+data <- rnorm(10, mean = 50, sd = 10)
+
+# Confidence level
+confidence_level <- 0.95
+
+# Sample mean and standard deviation
+sample_mean <- mean(data)
+sample_sd <- sd(data)
+
+# Sample size
+sample_size <- length(data)
+
+# 1. Asymptotic Method (Z-interval)
+z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+ci_asymptotic <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+
+# 2. Exact Method (t-interval)
+t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+
+# 3. Bootstrapping Method
+library(boot)
+
+# Define a function to calculate the statistic of interest (e.g., mean)
+statistic_function <- function(data, indices) {
+  sample_data <- data[indices]
+  return(mean(sample_data))
+}
+
+# Perform bootstrapping
+set.seed(123)  # Set seed for reproducibility
+boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of bootstrap samples
+
+# Calculate bootstrap confidence interval
+ci_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
+
+# Print results
+cat("Asymptotic Method (Z-interval):", ci_asymptotic, "\n")
+cat("Exact Method (t-interval):", ci_exact, "\n")
+cat("Bootstrap Method:", ci_bootstrap, "\n")
+
+```
+
+
+```{r}
+
+# Sample data (replace this with your own dataset)
+#set.seed(123)
+#data <- rnorm(100, mean = 50, sd = 10)
+
+
+
+sample_size <-  10 # Количество респондентов прошедших терапию
+Hg_improve  <-  20  # Истинное изменение уровня Hg
+Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
+
+alpha <- 0.05       # порог
+#x_lower <- qnorm(alpha/2)   # нижняя граница 
+#x_upper <- qnorm(1-alpha/2)  # верхняя граница
+
+
+
+# Confidence level
+# confidence_level <- 0.95
+
+# Sample size
+#sample_size <- length(data)
+
+# Number of iterations
+num_iterations <- 10000
+
+# Initialize counters for each method
+captured_asymptotic <- 0
+captured_exact <- 0
+captured_bootstrap <- 0
+
+for (i in 1:num_iterations) {
+  # Resample the data with replacement
+  Hg_change <- rgeom(sample_size, 1/(Hg_improve+1))
+  
+  # Calculate the sample mean and standard deviation for the resampled data
+  sample_mean <- mean(Hg_change)
+  sample_sd <- sd(Hg_change)
+  
+  # 1. Asymptotic Method (Z-interval)
+  z_critical <- qnorm(alpha/2)
+  margin_of_error_asymptotic <- z_critical * (sample_sd / sqrt(sample_size))
+  ci_asymptotic <- c(sample_mean - margin_of_error_asymptotic, sample_mean + margin_of_error_asymptotic)
+  
+  # 2. Exact Method (t-interval)
+  t_critical <- qt(alpha/2, df = sample_size - 1)
+  margin_of_error_exact <- t_critical * (sample_sd / sqrt(sample_size))
+  ci_exact <- c(sample_mean - margin_of_error_exact, sample_mean + margin_of_error_exact)
+  
+  # 3. Bootstrapping Method
+  boot_results <- boot(Hg_change, statistic_function, R = 1000)
+  ci_bootstrap <- quantile(boot_results$t, c(alpha/2, 1-alpha/2))
+  
+  
+  # Check if the true mean falls within the confidence intervals
+  if (Hg_improve <= ci_asymptotic[1] && Hg_improve >= ci_asymptotic[2]) {
+    captured_asymptotic <- captured_asymptotic + 1
+  }
+  
+  if (Hg_improve <= ci_exact[1] && Hg_improve >= ci_exact[2]) {
+    captured_exact <- captured_exact + 1
+  }
+  
+  if (Hg_improve >= ci_bootstrap[1] && Hg_improve <= ci_bootstrap[2]) {
+    captured_bootstrap <- captured_bootstrap + 1
+  }
+}
+
+# Calculate capture rates
+capture_rate_asymptotic <- captured_asymptotic / num_iterations
+capture_rate_exact <- captured_exact / num_iterations
+capture_rate_bootstrap <- captured_bootstrap / num_iterations
+
+# Print capture rates
+cat("Capture Rate (Asymptotic Method):", capture_rate_asymptotic, "\n")
+cat("Capture Rate (Exact Method):", capture_rate_exact, "\n")
+cat("Capture Rate (Bootstrap Method):", capture_rate_bootstrap, "\n")
+
+hist(Hg_change)
+
+??CI
+
+```
+
+
+```{r}
+install.packages('Rmisc')
+library(Rmisc)
+
+CI(Hg_change)
+
+```
+
+
 
 ## Квантили (напомнить)
 
@@ -85,11 +263,50 @@ table(missed)
 ```
 
 
-## Доверительный интервал (количественная переменная, геометрическое распределение)
 
 ```{r}
 
-sample_size <-  70 # Количество респондентов прошедших терапию
+#install.packages('Rmisc')
+library(Rmisc)
+
+CI(Hg_change)[3]
+
+sample_size <-  3 # Количество респондентов прошедших терапию
+Hg_improve  <-  20  # Истинное изменение уровня Hg
+Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
+
+alpha <- 0.05       # порог
+#x_lower <- qnorm(alpha/2)    # нижняя граница
+#x_upper <- qnorm(1-alpha/2)  # верхняя граница
+
+num_samples <- 10000  #  Сколько раз мы набираем выборку?
+
+missed <- sapply(1:num_samples, function (k) {
+
+  Hg_change <- rnorm(sample_size, Hg_improve, Hg_sd)  # Формируем выборку
+
+  CI(Hg_change)[3]
+  lower_bound <- CI(Hg_change)[3] # По выборке оцениваем нижнюю границу доверительного интервала
+  upper_bound <- CI(Hg_change)[1]  # По выборке оцениваем верхнюю границу доверительного интервала
+
+  true_or_false <- ifelse((lower_bound<Hg_improve) & (upper_bound>Hg_improve), 'Captured', 'Missed') # фиксируем результат
+
+})
+
+
+table(missed)
+
+
+
+```
+
+
+## Доверительный интервал (количественная переменная, геометрическое распределение)
+
+```{r}
+# Z test
+
+sample_size <-  1000 # Количество респондентов прошедших терапию
 avg_days    <-  7 # Истинная продолжительность болезни
 
 
@@ -105,6 +322,37 @@ missed <- sapply(1:num_samples, function (k) {
   
   lower_bound <- mean(my_group_deseases_duration) + x_lower*sd(my_group_deseases_duration)/sqrt(sample_size)  # По выборке оцениваем нижнюю границу доверительного интервала
   upper_bound <- mean(my_group_deseases_duration) + x_upper*sd(my_group_deseases_duration)/sqrt(sample_size)  # По выборке оцениваем верхнюю границу доверительного интервала
+  
+  true_or_false <- ifelse((lower_bound<avg_days) & (upper_bound>avg_days), 'Captured', 'Missed') # фиксируем результат
+
+})
+
+
+table(missed)
+
+```
+
+
+
+```{r}
+# Exact
+
+sample_size <-  10 # Количество респондентов прошедших терапию
+avg_days    <-  7 # Истинная продолжительность болезни
+
+
+alpha <- 0.05       # порог
+x_lower <- qnorm(alpha/2)    # нижняя граница 
+x_upper <- qnorm(1-alpha/2)  # верхняя граница
+
+num_samples <- 10000  #  Сколько раз мы набираем выборку?
+
+missed <- sapply(1:num_samples, function (k) {
+   
+  my_group_deseases_duration <- rgeom(sample_size, 1/(avg_days+1)) # Формируем выборку 
+  
+  lower_bound <- CI(my_group_deseases_duration)[3] # По выборке оцениваем нижнюю границу доверительного интервала
+  upper_bound <- CI(my_group_deseases_duration)[1]  # По выборке оцениваем верхнюю границу доверительного интервала
   
   true_or_false <- ifelse((lower_bound<avg_days) & (upper_bound>avg_days), 'Captured', 'Missed') # фиксируем результат
 
@@ -510,12 +758,6 @@ server <- function(input, output) {
 # Run the Shiny app
 shinyApp(ui, server)
 
-
-
-
-
-
-
 ```
 
 
@@ -523,5 +765,107 @@ shinyApp(ui, server)
 
 ## Бутстреп как метод построения доверительного интервала
 
+## Доверительный интервал для OR (отношение шансов)
+
+
+
+
+
+
+# Проверка статистических гипотез
+
+
+```{r}
+#https://machinelearningmastery.com/statistical-hypothesis-tests-in-python-cheat-sheet/
+
+```
+
+
+# Chi squared with bootstrap
+
+```{r}
+#https://search.r-project.org/CRAN/refmans/DCluster/html/achisq.boot.html
+
+install.packages('spdep')
+install.packages('DCluster')
+
+library(boot)
+library(spdep)
+library(DCluster)
+
+data(nc.sids)
+
+sids<-data.frame(Observed=nc.sids$SID74)
+sids<-cbind(sids, Expected=nc.sids$BIR74*sum(nc.sids$SID74)/sum(nc.sids$BIR74))
+
+niter<-1000
+
+# Define the achisq.boot statistic function
+# achisq.boot <- function(data, indices) {
+#   observed <- data$Observed[indices]
+#   expected <- data$Expected[indices]
+#   chi_square <- sum((observed - expected)^2 / expected)
+#   return(chi_square)
+# }
+
+
+#Permutation  model
+chq.perboot<-boot(sids, statistic=achisq.boot, R=niter)
+plot(chq.perboot)#Display results
+
+#Multinomial model
+chq.mboot<-boot(sids, statistic=achisq.pboot, sim="parametric", ran.gen=multinom.sim,  R=niter)
+plot(chq.mboot)#Display results
+
+#Poisson model
+chq.pboot<-boot(sids, statistic=achisq.pboot, sim="parametric", ran.gen=poisson.sim,  R=niter)
+plot(chq.pboot)#Display results
+
+#Poisson-Gamma model
+chq.pgboot<-boot(sids, statistic=achisq.pboot, sim="parametric", ran.gen=negbin.sim, R=niter)
+plot(chq.pgboot)#Display results
+
+
+```
+
+```{r}
+
+library(boot)
+
+# Example contingency table
+cont_table <- matrix(c(10, 200, 30, 40), nrow = 2, byrow = TRUE)
+rownames(cont_table) <- c("Category1", "Category2")
+colnames(cont_table) <- c("Group1", "Group2")
+
+
+# Define a function to calculate chi-squared statistic
+chisq_stat <- function(data, indices) {
+  sampled_table <- data[indices, ]
+  chi_square <- chisq.test(sampled_table)$statistic
+  return(chi_square)
+}
+
+# Set the number of bootstrap replicates
+niter <- 1000
+
+# Perform bootstrap resampling
+chisq_boot_result <- boot(data = cont_table, statistic = chisq_stat, R = niter)
+
+# Display results
+print(chisq_boot_result)
+
+
+
+# Access the bootstrap replicates
+bootstrap_replicates <- chisq_boot_result$t
+
+# Calculate the observed chi-squared statistic
+observed_statistic <- chisq.test(cont_table)$statistic
+
+# Calculate the p-value
+p_value <- sum(abs(bootstrap_replicates) >= abs(observed_statistic)) / niter
+
+
+```
 
 
