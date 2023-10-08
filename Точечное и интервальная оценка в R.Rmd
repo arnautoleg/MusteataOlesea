@@ -830,42 +830,18 @@ plot(chq.pgboot)#Display results
 
 ```{r}
 
-library(boot)
+#https://livebook.manning.com/book/r-in-action/chapter-12/1 - permutation and bootstrepping
 
-# Example contingency table
-cont_table <- matrix(c(10, 200, 30, 40), nrow = 2, byrow = TRUE)
-rownames(cont_table) <- c("Category1", "Category2")
-colnames(cont_table) <- c("Group1", "Group2")
+#https://www.rdocumentation.org/packages/RDS/versions/0.8-1/topics/bootstrap.contingency.test
 
+data(faux)
+bootstrap.contingency.test(rds.data=faux, row.var="X", col.var="Y",
+  number.of.bootstrap.samples=50, verbose=FALSE)
 
-# Define a function to calculate chi-squared statistic
-chisq_stat <- function(data, indices) {
-  sampled_table <- data[indices, ]
-  chi_square <- chisq.test(sampled_table)$statistic
-  return(chi_square)
-}
-
-# Set the number of bootstrap replicates
-niter <- 1000
-
-# Perform bootstrap resampling
-chisq_boot_result <- boot(data = cont_table, statistic = chisq_stat, R = niter)
-
-# Display results
-print(chisq_boot_result)
-
-
-
-# Access the bootstrap replicates
-bootstrap_replicates <- chisq_boot_result$t
-
-# Calculate the observed chi-squared statistic
-observed_statistic <- chisq.test(cont_table)$statistic
-
-# Calculate the p-value
-p_value <- sum(abs(bootstrap_replicates) >= abs(observed_statistic)) / niter
 
 
 ```
+
+
 
 
