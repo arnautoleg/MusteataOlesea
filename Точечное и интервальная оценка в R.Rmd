@@ -778,6 +778,20 @@ shinyApp(ui, server)
 ```{r}
 #https://machinelearningmastery.com/statistical-hypothesis-tests-in-python-cheat-sheet/
 
+#https://analyse-it.com/docs/user-guide/101/estimation
+
+#https://analyse-it.com/docs/user-guide/101/exact-asymptotic-p-values#:~:text=A%20p%2Dvalue%20calculated%20using,about%20the%20hypothesis%20of%20interest.
+
+
+#https://statistics.laerd.com/statistical-guides/mann-whitney-u-test-assumptions.php#:~:text=Assumption%20%234%3A%20You%20must%20determine,shape%20or%20a%20different%20shape. Mann Withney
+x <- c(5,  5,  5,  4)
+y <- c(0, 0, 0, 0)
+wilcox.test(x, y, paired = FALSE, alternative = "greater")
+
+
+
+
+
 ```
 
 
@@ -834,14 +848,34 @@ plot(chq.pgboot)#Display results
 
 #https://www.rdocumentation.org/packages/RDS/versions/0.8-1/topics/bootstrap.contingency.test
 
+# https://www.tandfonline.com/doi/full/10.1080/10543406.2014.920851?scroll=top&needAccess=true
+
+
+if(!require('RDS')) {
+    install.packages('RDS')
+    library('RDS')
+}
+
 data(faux)
+
 bootstrap.contingency.test(rds.data=faux, row.var="X", col.var="Y",
-  number.of.bootstrap.samples=50, verbose=FALSE)
+  number.of.bootstrap.samples=1000, verbose=FALSE)
+
+data(faux)
+convergence.plot(faux,c("X","Y"))
+
 
 
 
 ```
 
 
+```{r}
+
+install.packages("boot")
+
+
+
+```
 
 
