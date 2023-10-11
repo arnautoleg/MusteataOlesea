@@ -766,8 +766,285 @@ shinyApp(ui, server)
 ## Бутстреп как метод построения доверительного интервала
 
 ## Доверительный интервал для OR (отношение шансов)
+## https://search.r-project.org/CRAN/refmans/epitools/html/oddsratio.html
 
 
+```{r}
+install.packages('oddsratio')
+
+
+library(oddsratio)
+library(mgcv)
+fit_gam <- gam(y ~ s(x0) + s(I(x1^2)) + s(x2) +
+offset(x3) + x4, data = data_gam) # fit model
+# create input objects (plot + odds ratios)
+plot_object <- plot_gam(fit_gam, pred = "x2", title = "Predictor 'x2'")
+or_object1 <- or_gam(
+data = data_gam, model = fit_gam,
+pred = "x2", values = c(0.099, 0.198)
+)
+
+
+```
+
+
+
+```{r}
+
+# Define the values from your contingency table
+a <- 30  # Number of observations in Group 1 with Outcome 1
+b <- 20  # Number of observations in Group 2 with Outcome 1
+c <- 10  # Number of observations in Group 1 with Outcome 2
+d <- 40  # Number of observations in Group 2 with Outcome 2
+
+# Calculate the odds ratio (OR)
+OR <- (a / c) / (b / d)
+
+# Calculate the standard error (SE) of ln(OR)
+SE <- sqrt((1 / a) + (1 / b) + (1 / c) + (1 / d))
+
+# Set the confidence level (e.g., 95%)
+confidence_level <- 0.95
+
+# Calculate the critical value (Z) for the confidence interval
+Z <- qnorm(1 - (1 - confidence_level) / 2)
+
+# Calculate the lower and upper limits of the confidence interval for ln(OR)
+LL <- log(OR) - (Z * SE)
+UL <- log(OR) + (Z * SE)
+
+# Calculate the confidence interval for OR
+OR_CI <- exp(c(LL, UL))
+
+# Print the results
+cat("Odds Ratio (OR):", OR, "\n")
+cat("Confidence Interval (95%) for OR:", OR_CI[1], "to", OR_CI[2], "\n")
+
+
+```
+
+
+```{r}
+
+# Define the values from your contingency table
+a <- 30  # Number of observations in Group 1 with Outcome 1
+b <- 20  # Number of observations in Group 2 with Outcome 1
+c <- 10  # Number of observations in Group 1 with Outcome 2
+d <- 40  # Number of observations in Group 2 with Outcome 2
+
+# Create a 2x2 contingency table
+contingency_table <- matrix(c(a, b, c, d), nrow = 2)
+rownames(contingency_table) <- c("Outcome 1", "Outcome 2")
+colnames(contingency_table) <- c("Group 1", "Group 2")
+
+# Perform Fisher's exact test to calculate OR and its exact confidence interval
+fisher_result <- fisher.test(contingency_table, alternative = "two.sided", conf.int = TRUE)
+
+# Extract the OR and its exact confidence interval
+OR <- fisher_result$estimate
+OR_CI <- fisher_result$conf.int
+
+# Print the results
+cat("Odds Ratio (OR):", OR, "\n")
+cat("Exact Confidence Interval for OR:", OR_CI[1], "to", OR_CI[2], "\n")
+
+
+```
+
+
+```{r}
+
+# Load the boot package
+library(boot)
+
+# Define your data
+a <- 30  # Number of observations in Group 1 with Outcome 1
+b <- 20  # Number of observations in Group 2 with Outcome 1
+c <- 10  # Number of observations in Group 1 with Outcome 2
+d <- 40  # Number of observations in Group 2 with Outcome 2
+
+# Define a function to calculate the OR
+calculate_OR <- function(data, indices) {
+  sampled_data <- data[indices, ]
+  a <- sum(sampled_data$Outcome == "Outcome1" & sampled_data$Group == "Group1")
+  b <- sum(sampled_data$Outcome == "Outcome1" & sampled_data$Group == "Group2")
+  c <- sum(sampled_data$Outcome == "Outcome2" & sampled_data$Group == "Group1")
+  d <- sum(sampled_data$Outcome == "Outcome2" & sampled_data$Group == "Group2")
+  
+  OR <- (a / c) / (b / d)
+  return(OR)
+}
+
+
+
+# Create a data frame with your data
+data <- data.frame(
+  Group = c(rep("Group1", a + c), rep("Group2", b + d)),
+  Outcome = c(rep("Outcome1", a), rep("Outcome2", c), rep("Outcome1", b), rep("Outcome2", d))
+)
+
+# Set the number of bootstrap samples
+n_bootstrap_samples <- 1000
+
+# Perform bootstrapping to calculate the CI for OR
+boot_results <- boot(data, statistic = calculate_OR, R = n_bootstrap_samples)
+
+# Calculate the CI
+OR_CI <- boot.ci(boot_results, type = "bca")
+
+# Print the results
+print(OR_CI)
+
+
+```
+
+
+```{r}
+
+# Load necessary libraries
+library(boot)
+
+
+# Define a function to calculate asymptotic CI for OR
+calculate_asymptotic_CI <- function(data, confidence_level) {
+  # Implement the calculation of asymptotic CI for OR
+  # Replace the following lines with your actual code
+  OR <- calculate_OR(data)  # Calculate OR using your method
+  SE <- calculate_SE(data)  # Calculate standard error of ln(OR)
+  z <- qnorm(1 - (1 - confidence_level) / 2)
+  lower_limit <- log(OR) - z * SE
+  upper_limit <- log(OR) + z * SE
+  return(c(exp(lower_limit), exp(upper_limit)))  # Return CI as a numeric vector
+}
+
+calculate_asymptotic_CI(simulated_data, confidence_level)
+
+
+# Define a function to calculate exact CI for OR
+calculate_exact_CI <- function(data, confidence_level) {
+  # Implement the calculation of exact CI for OR
+  # Replace the following lines with your actual code
+  OR <- calculate_OR(data)  # Calculate OR using your method
+  # Add code to perform exact calculation of CI
+  return(c(lower_limit, upper_limit))  # Return CI as a numeric vector
+}
+
+# Define a function to calculate bootstrap CI for OR
+calculate_bootstrap_CI <- function(data, confidence_level) {
+  # Implement the calculation of bootstrap CI for OR
+  # Replace the following lines with your actual code
+  OR <- calculate_OR(data)  # Calculate OR using your method
+  # Add code to perform bootstrap calculation of CI
+  return(c(lower_limit, upper_limit))  # Return CI as a numeric vector
+}
+
+# Rest of the simulation code remains the same
+
+
+
+
+# Define a function to generate simulated data
+generate_data <- function(n, p, OR) {
+  a <- round(n * p)
+  c <- n - a
+  b <- round(a / OR)
+  d <- c - b
+  
+  # Create a 2x2 contingency table
+  contingency_table <- matrix(c(a, b, c, d), nrow = 2)
+  rownames(contingency_table) <- c("Outcome 1", "Outcome 2")
+  colnames(contingency_table) <- c("Group 1", "Group 2")
+  
+  return(contingency_table)
+}
+
+# Set simulation parameters
+n_simulations <- 1000  # Number of simulations
+n_samples <- 100       # Sample size in each simulation
+true_OR <- 2           # True odds ratio to simulate
+confidence_level <- 0.95
+
+# Initialize storage for results
+results <- data.frame(Method = character(n_simulations), 
+                       Coverage = numeric(n_simulations))
+
+# Run simulations
+for (i in 1:n_simulations) {
+  # Generate simulated data
+  simulated_data <- generate_data(n_samples, 0.5, true_OR)
+  
+  # Calculate CIs using different methods
+  asymptotic_CI <- calculate_asymptotic_CI(simulated_data, confidence_level)
+  exact_CI <- calculate_exact_CI(simulated_data, confidence_level)
+  bootstrap_CI <- calculate_bootstrap_CI(simulated_data, confidence_level)
+  
+  # Determine which method provided the true OR within the CI
+  asymptotic_coverage <- (asymptotic_CI[1] <= true_OR) & (true_OR <= asymptotic_CI[2])
+  exact_coverage <- (exact_CI[1] <= true_OR) & (true_OR <= exact_CI[2])
+  bootstrap_coverage <- (bootstrap_CI[1] <= true_OR) & (true_OR <= bootstrap_CI[2])
+  
+  # Store results
+  if (asymptotic_coverage) {
+    results[i, ] <- c("Asymptotic", 1)
+  } else if (exact_coverage) {
+    results[i, ] <- c("Exact", 1)
+  } else if (bootstrap_coverage) {
+    results[i, ] <- c("Bootstrap", 1)
+  } else {
+    results[i, ] <- c("None", 0)
+  }
+}
+
+# Calculate coverage probabilities
+coverage_probabilities <- table(results$Method) / n_simulations
+
+# Print coverage probabilities
+print(coverage_probabilities)
+
+
+```
+
+
+
+```{r}
+
+calculate_asymptotic_CI <- function(contingency_table, confidence_level = 0.95) {
+  # Calculate the odds ratio (OR) from the contingency table
+  a <- contingency_table[1, 1]
+  b <- contingency_table[1, 2]
+  c <- contingency_table[2, 1]
+  d <- contingency_table[2, 2]
+  
+  OR <- (a * d) / (b * c)
+  
+  # Calculate the standard error (SE) of the log(OR)
+  SE_log_OR <- sqrt((1/a) + (1/b) + (1/c) + (1/d))
+  
+  # Calculate the z-score for the specified confidence level
+  z <- qnorm(1 - (1 - confidence_level) / 2)
+  
+  # Calculate the lower and upper limits of the asymptotic CI
+  lower_limit <- log(OR) - z * SE_log_OR
+  upper_limit <- log(OR) + z * SE_log_OR
+  
+  # Transform the limits back to the OR scale
+  asymptotic_CI <- exp(c(lower_limit, upper_limit))
+  
+  return(asymptotic_CI)
+}
+
+# Example usage:
+# Create a 2x2 contingency table
+contingency_table <- matrix(c(30, 20, 10, 40), nrow = 2)
+rownames(contingency_table) <- c("Outcome 1", "Outcome 2")
+colnames(contingency_table) <- c("Group 1", "Group 2")
+
+# Calculate asymptotic CI for OR with a 95% confidence level
+asymptotic_CI <- calculate_asymptotic_CI(contingency_table)
+print(asymptotic_CI)
+
+
+```
 
 
 
@@ -877,5 +1154,219 @@ install.packages("boot")
 
 
 ```
+
+
+
+
+```{r}
+
+waldInterval <- function(x, n, conf.level = 0.95){
+ p <- x/n
+ sd <- sqrt(p*((1-p)/n))
+ z <- qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) #returns the value of thresholds at which conf.level has to be cut at. for 95% CI, this is -1.96 and +1.96
+ ci <- p + z*sd
+ return(ci)
+ }
+#example
+waldInterval(x = 20, n =40) #this will return 0.345 and 0.655
+
+
+numSamples <- 10000 #number of samples to be drawn from population
+numTrials <- 100 #this is the sample size (size of each sample)
+
+probs <- seq(0.001, 0.999, 0.01) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+for (i in 1:length(probs)) {
+ x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+ isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+ #since we have n different x here, we will have n different ci for #each of them. 
+ for (j in 1:numSamples) {
+ ci <- binom.test(x = x[j], n = numTrials)$conf
+ isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+ }
+ coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+}
+
+
+
+# Create the plot
+plot(probs, coverage, type="l", ylim = c(75,100), col="blue", lwd=2, frame.plot = FALSE, yaxt='n', main = "Coverage of Wald Interval",
+     xlab = "True Proportion (Population Proportion)", ylab = "Coverage (%) for 95% CI")
+abline(h = 95, lty=3, col="maroon", lwd=2)
+axis(side = 2, at=seq(75,100, 5))
+     
+
+
+
+```
+
+
+
+```{r}
+
+
+
+# Define your data
+SCALE_1 <- c(3, 5, 5, 4, 4, 3, 4, 2, 2, 3, 2, 1, 1, 2, 0, 2, 5, 4, 5, 4, 0, 0, 0, 0)
+SCALE_2 <- c(2, 2, 3, 2, 2, 1, 2, 3, 2, 1, 1, 2, 2, 1, 1, 1, 3, 3, 2, 3, 0, 0, 0, 0)
+
+
+# Create a data frame with your data
+my_data_frame <- data.frame(SCALE_1 = SCALE_1, SCALE_2 = SCALE_2)
+print(my_data_frame)
+
+my_data_frame$SCALE_1 <- factor(my_data_frame$SCALE_1, levels = c(0, 1, 2, 3, 4, 5), labels = c("Изменений нет",
+                                                                                                "Единичные", 
+                                                                                                "Кольцо 1 слой",
+                                                                                                "Кольцо 2 слоя",
+                                                                                                "Кольцо 3 слоя",
+                                                                                                "Кольцо 4 и > слоёв"))
+
+my_data_frame$SCALE_2 <- factor(my_data_frame$SCALE_2, levels = c(0, 1, 2, 3), labels = c("Изменений нет",
+                                                                                       "Лёгкая", 
+                                                                                       "Умеренная",
+                                                                                       "Выраженная"))
+
+# Print the data frame
+print(my_data_frame)
+
+df3 <- my_data_frame %>% 
+  group_by(SCALE_1, SCALE_2) %>% 
+  tally() %>% 
+  complete(SCALE_2, fill = list(n = 0)) %>% 
+  mutate(percentage = n / sum(n) * 100)
+
+
+ggplot(df3, aes(SCALE_1, percentage, fill = SCALE_2)) + 
+  geom_bar(stat = 'identity', position = 'dodge') +
+  ylim(0, 100)+
+  ylab("%")+
+  scale_fill_brewer(palette = "Set2")+
+  theme(legend.position = "right", axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+# 1. convert the data as a table
+dt <- as.matrix(table(my_data_frame$SCALE_1, my_data_frame$SCALE_2))
+dt
+
+#dt
+# 2. Graph
+#balloonplot(t(dt), xlab ="", ylab="",
+#            label = FALSE, 
+#            repel = TRUE,
+#            show.margins = FALSE)
+
+chisq <- chisq.test(dt)
+chisq
+
+res.ca <- FactoMineR::CA(dt, graph = FALSE)
+# inspect results of the CA
+#print(res.ca)
+eig.val <- get_eigenvalue(res.ca)
+eig.val
+
+# repel= TRUE to avoid text overlapping (slow if many point)
+fviz_ca_biplot(res.ca, 
+               repel = TRUE,
+               col.row = "orange",
+               col.col = "darkgray")
+
+```
+
+
+
+
+```{r}
+
+library(ggplot2)
+
+# Set a seed for reproducibility
+set.seed(123)
+
+# Generate synthetic data with a Pearson correlation of 0.85
+correlation <- 0.85
+n <- 100  # Number of data points
+
+# Generate IL1 and TNF variables
+IL1 <- rnorm(n)
+TNF <- correlation * IL1 + sqrt(1 - correlation^2) * rnorm(n)
+
+# Create a data frame
+data <- data.frame(IL1, TNF)
+
+# Calculate the Pearson correlation coefficient
+pearson_corr <- cor(data$IL1, data$TNF)
+
+# Create a scatter plot with increased font size
+ggplot(data, aes(x = IL1, y = TNF)) +
+  geom_point() +
+  labs(title = paste("Pearson Correlation =", round(pearson_corr, 2))) +
+  theme(
+    text = element_text(size = 12),  # Adjust the font size
+    axis.text.x = element_text(size = 12),  # Adjust x-axis label font size
+    axis.text.y = element_text(size = 12),  # Adjust y-axis label font size
+    plot.title = element_text(size = 14)  # Adjust title font size
+  )
+
+```
+
+
+
+```{r}
+
+
+# Load the required libraries
+library(ggplot2)
+
+# Sample data with a U-shaped relationship
+x <- seq(-2, 2, length.out = 100)
+y <- x^2 + rnorm(100)
+data <- data.frame(X = x, Y = y)
+
+# Create a scatter plot
+ggplot(data, aes(x = X, y = Y)) +
+  geom_point() +
+  labs(x = "X-axis", y = "Y-axis", title = "Scatter Plot of a U-Shaped Relationship")
+
+
+
+```
+
+
+
+```{r}
+
+# Load the required libraries
+library(ggplot2)
+
+# Fictitious preclinical research data with a U-shaped relationship
+dose <- seq(-2, 2, length.out = 100)  # Dose levels
+response <- x^2 + rnorm(100)  # Response with a U-shaped pattern
+
+data <- data.frame(Dose = dose, Response = response)
+
+# Create a scatter plot
+ggplot(data, aes(x = Dose, y = Response)) +
+  geom_point() +
+  labs(x = "Dose", y = "Response", title = "Scatter Plot of Dose vs. Response (U-Shaped Relationship)")
+
+
+correlation <- cor(data$Dose, data$Response)
+
+
+ggplot(data, aes(x = Dose, y = Response)) +
+  geom_point() +
+  labs(x = "Dose", y = "Response", title = "Scatter Plot of Dose vs. Response (U-Shaped Relationship)") +
+  annotate("text", x = 0, y = max(data$Response), 
+           label = paste("Pearson Correlation =", round(correlation, 2)), 
+           hjust = 0, vjust = 1)
+
+```
+
+
+
+
 
 
