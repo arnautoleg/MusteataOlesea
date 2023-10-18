@@ -440,158 +440,6 @@ print(table(missed_bootstrapping))
 ## От чего зависит ширина доверительного интервала?
 
 
-
-
-# Доверительный интервал для доли
-
-## Wald Interval  https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f
-
-
-```{r}
-
-waldInterval <- function(x, n, conf.level = 0.95){
- p <- x/n
- sd <- sqrt(p*((1-p)/n))
- z <- qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) #returns the value of thresholds at which conf.level has to be cut at. for 95% CI, this is -1.96 and +1.96
- ci <- p + z*sd
- return(ci)
- }
-#example
-waldInterval(x = 20, n =40) #this will return 0.345 and 0.655
-
-```
-
-```{r}
-
-numSamples <- 100 #number of samples to be drawn from population
-numTrials <- 1000 #this is the sample size (size of each sample)
-probs <- seq(0.001, 0.999, 0.01) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
-coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
-for (i in 1:length(probs)) {
- x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
- isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
- #since we have n different x here, we will have n different ci for #each of them. 
- for (j in 1:numSamples) {
- ci <- waldInterval(x = x[j], n = numTrials)
- isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
- }
- coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
-}
-
-
-plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Wald Interval',
- xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
-abline(h = 95, lty=3, col='maroon', lwd=2)
-axis(side = 2, at=seq(75,100, 5))
-
-
-```
-
-
-## Clopper — Pearson Interval (Exact Interval)
-
-```{r}
-
-numSamples <- 100 #number of samples to be drawn from population
-numTrials <- 1000 #this is the sample size (size of each sample)
-probs <- seq(0.001, 0.999, 0.01) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
-coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
-for (i in 1:length(probs)) {
- x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
- isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
- #since we have n different x here, we will have n different ci for #each of them. 
- for (j in 1:numSamples) {
- ci <- binom.test(x = x[j], n = numTrials)$conf
- isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
- }
- coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
-}
-plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Clopper — Pearson',
- xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
-abline(h = 95, lty=3, col='maroon', lwd=2)
-axis(side = 2, at=seq(75,100, 5))
-
-
-
-```
-
-
-
-
-
-
-```{r}
-
-# Создайте данные для двух групп (количество успешных и общее количество в каждой группе)
-successes_group_A <- 45
-total_group_A <- 100
-successes_group_B <- 60
-total_group_B <- 100
-
-# Оцените доли успешных событий в каждой группе
-prop_success_A <- successes_group_A / total_group_A
-prop_success_B <- successes_group_B / total_group_B
-
-# Оцените разницу в долях
-prop_diff <- prop_success_A - prop_success_B
-
-# Задайте уровень доверия (например, 95%)
-confidence_level <- 0.95
-
-# Вычислите стандартную ошибку разницы долей
-se_diff <- sqrt((prop_success_A * (1 - prop_success_A) / total_group_A) + (prop_success_B * (1 - prop_success_B) / total_group_B))
-
-# Вычислите критические значения Z для выбранного уровня доверия
-alpha <- 1 - confidence_level
-z_critical <- qnorm(1 - alpha / 2)
-
-# Вычислите границы доверительного интервала для разницы долей
-margin_of_error <- z_critical * se_diff
-conf_interval <- prop_diff + c(-margin_of_error, margin_of_error)
-
-# Выведите результаты
-cat("Разница долей:", prop_diff, "\n")
-cat(paste("Доверительный интервал (", 100 * confidence_level, "%): [", conf_interval[1], ", ", conf_interval[2], "]\n"))
-
-```
-
-
-
-
-
-
-
-# Доверительный интервал для разницы долей (зависимые и независимые выборки)
-
-```{r}
-#https://www.codecamp.ru/blog/confidence-interval-in-r/
-
-#input sample sizes and sample proportions
-n1 <- 100
-p1 <- .62
-
-n2 <- 100
-p2 <- .46
-
-#calculate margin of error
-margin <- qnorm(0.975)*sqrt(p1*(1-p1)/n1 + p2*(1-p2)/n2)
-
-#calculate lower and upper bounds of confidence interval
-low <- (p1-p2) - margin
-low
-
-high <- (p1-p2) + margin
-high
-
-
-#https://rpubs.com/AllaT/conf-ints ДОБАВИТЬ !!!!
-
-```
-
-
-
-
-
 # Доверительный интервал для разницы средних (зависимые и независимые выборки)
 
 ```{r}
@@ -717,6 +565,158 @@ shinyApp(ui, server)
 
 
 ```
+
+
+
+# Доверительный интервал для доли
+
+## Wald Interval  https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f
+
+
+```{r}
+
+waldInterval <- function(x, n, conf.level = 0.95){
+ p <- x/n
+ sd <- sqrt(p*((1-p)/n))
+ z <- qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) #returns the value of thresholds at which conf.level has to be cut at. for 95% CI, this is -1.96 and +1.96
+ ci <- p + z*sd
+ return(ci)
+ }
+#example
+waldInterval(x = 20, n =40) #this will return 0.345 and 0.655
+
+```
+
+```{r}
+
+numSamples <- 100 #number of samples to be drawn from population
+numTrials <- 1000 #this is the sample size (size of each sample)
+probs <- seq(0.001, 0.999, 0.01) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+for (i in 1:length(probs)) {
+ x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+ isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+ #since we have n different x here, we will have n different ci for #each of them. 
+ for (j in 1:numSamples) {
+ ci <- waldInterval(x = x[j], n = numTrials)
+ isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+ }
+ coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+}
+
+
+plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Wald Interval',
+ xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
+abline(h = 95, lty=3, col='maroon', lwd=2)
+axis(side = 2, at=seq(75,100, 5))
+
+
+```
+
+
+## Clopper — Pearson Interval (Exact Interval)
+
+```{r}
+
+numSamples <- 100 #number of samples to be drawn from population
+numTrials <- 1000 #this is the sample size (size of each sample)
+probs <- seq(0.001, 0.999, 0.01) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+for (i in 1:length(probs)) {
+ x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+ isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+ #since we have n different x here, we will have n different ci for #each of them. 
+ for (j in 1:numSamples) {
+ ci <- binom.test(x = x[j], n = numTrials)$conf
+ isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+ }
+ coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+}
+plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Clopper — Pearson',
+ xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
+abline(h = 95, lty=3, col='maroon', lwd=2)
+axis(side = 2, at=seq(75,100, 5))
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
+# Создайте данные для двух групп (количество успешных и общее количество в каждой группе)
+successes_group_A <- 45
+total_group_A <- 100
+successes_group_B <- 60
+total_group_B <- 100
+
+# Оцените доли успешных событий в каждой группе
+prop_success_A <- successes_group_A / total_group_A
+prop_success_B <- successes_group_B / total_group_B
+
+# Оцените разницу в долях
+prop_diff <- prop_success_A - prop_success_B
+
+# Задайте уровень доверия (например, 95%)
+confidence_level <- 0.95
+
+# Вычислите стандартную ошибку разницы долей
+se_diff <- sqrt((prop_success_A * (1 - prop_success_A) / total_group_A) + (prop_success_B * (1 - prop_success_B) / total_group_B))
+
+# Вычислите критические значения Z для выбранного уровня доверия
+alpha <- 1 - confidence_level
+z_critical <- qnorm(1 - alpha / 2)
+
+# Вычислите границы доверительного интервала для разницы долей
+margin_of_error <- z_critical * se_diff
+conf_interval <- prop_diff + c(-margin_of_error, margin_of_error)
+
+# Выведите результаты
+cat("Разница долей:", prop_diff, "\n")
+cat(paste("Доверительный интервал (", 100 * confidence_level, "%): [", conf_interval[1], ", ", conf_interval[2], "]\n"))
+
+
+
+```
+
+
+
+
+
+
+
+# Доверительный интервал для разницы долей (зависимые и независимые выборки)
+
+```{r}
+#https://www.codecamp.ru/blog/confidence-interval-in-r/
+
+#input sample sizes and sample proportions
+n1 <- 100
+p1 <- .62
+
+n2 <- 100
+p2 <- .46
+
+#calculate margin of error
+margin <- qnorm(0.975)*sqrt(p1*(1-p1)/n1 + p2*(1-p2)/n2)
+
+#calculate lower and upper bounds of confidence interval
+low <- (p1-p2) - margin
+low
+
+high <- (p1-p2) + margin
+high
+
+
+#https://rpubs.com/AllaT/conf-ints ДОБАВИТЬ !!!!
+
+```
+
+
 
 
 
