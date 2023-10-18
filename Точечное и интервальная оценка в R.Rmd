@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
 # Точечные оценки
@@ -27,11 +28,39 @@ knitr::opts_chunk$set(echo = TRUE)
 # Create a 2x2 layout for the plots
 par(mfrow=c(2, 2))
 
+
+# Set the parameters for the normal distribution
+mean_normal <- 50
+sd_normal <- 10
+# Generate random data for the normal distribution
+data_normal <- rnorm(10000, mean = mean_normal, sd = sd_normal)
+
 # Plot Normal Distribution
 hist(data_normal, breaks = 30, col = 'blue', main = 'Normal Distribution (μ=50, σ=10)', xlab = 'Value', ylab = 'Frequency')
 
+
+# Set the parameters for the uniform distribution
+min_uniform <- 44.5
+max_uniform <- 55.5
+
+# Generate random data for the uniform distribution
+data_uniform <- runif(10000, min = min_uniform, max = max_uniform)
+mean(data_uniform)
+var(data_uniform)
+
 # Plot Uniform Distribution
 hist(data_uniform, breaks = 30, col = 'green', main = 'Uniform Distribution (μ=50, σ=10)', xlab = 'Value', ylab = 'Frequency')
+
+
+# Set the parameters for the bimodal distribution
+mean1_bimodal <- 20
+sd1_bimodal <- 10
+mean2_bimodal <- 80
+sd2_bimodal <- 10
+
+# Generate random data for the bimodal distribution
+data_bimodal <- c(rnorm(5000, mean = mean1_bimodal, sd = sd1_bimodal), rnorm(5000, mean = mean2_bimodal, sd = sd2_bimodal))
+
 
 # Plot Bimodal Distribution
 hist(data_bimodal, breaks = 30, col = 'red', main = 'Bimodal Distribution (μ=50, σ=10)', xlab = 'Value', ylab = 'Frequency')
@@ -41,7 +70,7 @@ mean_exp <- 50
 sd_exp <- 10
 lambda_exp <- 1 / mean_exp
 
-data_exponential <- rexp(1000, rate = lambda_exp)
+data_exponential <- rexp(10000, rate = lambda_exp)
 
 # Plot Exponential Distribution
 hist(data_exponential, breaks = 30, col = 'purple', main = 'Exponential Distribution (μ=50, σ=10)', xlab = 'Value', ylab = 'Frequency')
@@ -52,13 +81,31 @@ par(mfrow=c(1, 1))
 
 ```
 
-# Доверительные интервалы
+
+# Доверительные интервалы для среднего
+
+## Квантили (напомнить)
+
+```{r}
+
+a <- c(0:100)
+
+cat(quantile(a, 0.025), 
+      quantile(a, 0.975))
+
+?quantile
+
+
+```
+
+## Доверительный интервал для среднего значения
 
 ```{r}
 
 sample_size <-  100 # Количество респондентов прошедших терапию
 Hg_improve  <-  20  # Истинное изменение уровня Hg
 Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
+
 
 alpha <- 0.05       # порог
 x_lower <- qnorm(alpha/2)   # нижняя граница 
@@ -78,12 +125,16 @@ missed <- sapply(1:num_samples, function (k) {
 
 table(missed)
 
+```
 
 
+## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае нормального распределения
+
+```{r}
 
 # Sample data (replace this with your own dataset)
 set.seed(123)
-data <- rnorm(10, mean = 50, sd = 10)
+data <- rnorm(100, mean = 20, sd = 3)
 
 # Confidence level
 confidence_level <- 0.95
@@ -115,6 +166,7 @@ statistic_function <- function(data, indices) {
 }
 
 # Perform bootstrapping
+
 set.seed(123)  # Set seed for reproducibility
 boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of bootstrap samples
 
@@ -122,278 +174,394 @@ boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of b
 ci_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
 
 # Print results
-cat("Asymptotic Method (Z-interval):", ci_asymptotic, "\n")
-cat("Exact Method (t-interval):", ci_exact, "\n")
-cat("Bootstrap Method:", ci_bootstrap, "\n")
+cat("Asymptotic Method (Z-interval):", ci_asymptotic, "Ширина:", ci_asymptotic[2]-ci_asymptotic[1], "\n")
+cat("Exact Method (t-interval):", ci_exact, "Ширина:", ci_exact[2]-ci_exact[1], "\n")
+cat("Bootstrap Method:", ci_bootstrap, "Ширина:", ci_bootstrap[2]-ci_bootstrap[1], "\n")
+
 
 ```
 
+
+## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае нормального распределения (симуляция)
+
+```{r}
+
+sample_size <-  4 # Количество респондентов прошедших терапию
+mean  <-  20  # Истинное изменение уровня Hg
+sd    <-  3   # Разброс для истинного изменения уровня Hg
+
+# Confidence level
+confidence_level <- 0.95
+
+num_samples <- 10000  #  Сколько раз мы набираем выборку?
+
+# 1. Asymptotic Method (Z-interval)
+
+missed <- sapply(1:num_samples, function (k) {
+
+  data <- rnorm(sample_size, mean = mean, sd = sd)  # Формируем выборку
+  sample_mean <- mean(data)
+  sample_sd <- sd(data)
+  
+  z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+  margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+  ci_asymptotic <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  true_or_false <- ifelse((ci_asymptotic[1]<mean) & (ci_asymptotic[2]>mean), 'Captured', 'Missed') # фиксируем результат
+
+})
+
+print("Asymptotic Method (Z-interval):")  
+print(table(missed))
+     
+
+
+# 2. Exact Method (t-interval)
+
+
+
+missed <- sapply(1:num_samples, function (k) {
+
+  data <- rnorm(sample_size, mean = mean, sd = sd)  # Формируем выборку
+  sample_mean <- mean(data)
+  sample_sd <- sd(data)
+  
+  t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+  margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+  ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  true_or_false <- ifelse((ci_exact[1]<mean) & (ci_exact[2]>mean), 'Captured', 'Missed') # фиксируем результат
+
+})
+
+print("Exact Method (t-interval)")  
+print(table(missed))
+
+
+
+# 3. Bootstrapping Method
+library(boot)
+
+# Define a function to calculate the statistic of interest (e.g., mean)
+statistic_function <- function(data, indices) {
+  sample_data <- data[indices]
+  return(mean(sample_data))
+}
+
+# Perform bootstrapping
+
+missed_bootstrapping <- sapply(1:num_samples, function(k) {
+  
+  data <- rnorm(sample_size, mean = mean, sd = sd)
+  # Perform bootstrapping for each sample
+  boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of bootstrap samples
+  
+  # Calculate bootstrap confidence interval
+  ci_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
+  
+  true_or_false <- ifelse((ci_bootstrap[1] < mean) & (ci_bootstrap[2] > mean), 'Captured', 'Missed')  # Record whether the true mean is captured
+  
+  return(true_or_false)
+})
+
+print("Bootstrapping Method")
+print(table(missed_bootstrapping))
+
+
+```
+
+
+## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае экспоненциального распределения
+
+
+```{r}
+
+# Specify the desired mean and standard deviation
+mean <- 10
+
+# Calculate the rate parameter (λ)
+lambda <- 1 / mean
+
+# Generate random data from the exponential distribution with the specified λ
+data_exponential <- rexp(100, rate = lambda)
+
+# Check the actual mean and standard deviation of the generated data
+actual_mean <- mean(data_exponential)
+actual_sd <- sd(data_exponential)
+
+# Print the actual mean and standard deviation
+cat("Actual Mean:", actual_mean, "\n")
+cat("Actual Standard Deviation:", actual_sd, "\n")
+
+hist(data_exponential)
+
+
+```
 
 ```{r}
 
 # Sample data (replace this with your own dataset)
-#set.seed(123)
-#data <- rnorm(100, mean = 50, sd = 10)
-
-
-
-sample_size <-  10 # Количество респондентов прошедших терапию
-Hg_improve  <-  20  # Истинное изменение уровня Hg
-Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
-
-alpha <- 0.05       # порог
-#x_lower <- qnorm(alpha/2)   # нижняя граница 
-#x_upper <- qnorm(1-alpha/2)  # верхняя граница
-
-
+set.seed(123)
+mean = 20
+n=100
+data <-  rexp(n, rate = 1/mean)
 
 # Confidence level
-# confidence_level <- 0.95
+confidence_level <- 0.95
+
+# Sample mean and standard deviation
+sample_mean <- mean(data)
+sample_sd <- sd(data)
 
 # Sample size
-#sample_size <- length(data)
+sample_size <- length(data)
 
-# Number of iterations
-num_iterations <- 10000
+# 1. Asymptotic Method (Z-interval)
+z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+ci_asymptotic <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
 
-# Initialize counters for each method
-captured_asymptotic <- 0
-captured_exact <- 0
-captured_bootstrap <- 0
+# 2. Exact Method (t-interval)
+t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
 
-for (i in 1:num_iterations) {
-  # Resample the data with replacement
-  Hg_change <- rgeom(sample_size, 1/(Hg_improve+1))
-  
-  # Calculate the sample mean and standard deviation for the resampled data
-  sample_mean <- mean(Hg_change)
-  sample_sd <- sd(Hg_change)
-  
-  # 1. Asymptotic Method (Z-interval)
-  z_critical <- qnorm(alpha/2)
-  margin_of_error_asymptotic <- z_critical * (sample_sd / sqrt(sample_size))
-  ci_asymptotic <- c(sample_mean - margin_of_error_asymptotic, sample_mean + margin_of_error_asymptotic)
-  
-  # 2. Exact Method (t-interval)
-  t_critical <- qt(alpha/2, df = sample_size - 1)
-  margin_of_error_exact <- t_critical * (sample_sd / sqrt(sample_size))
-  ci_exact <- c(sample_mean - margin_of_error_exact, sample_mean + margin_of_error_exact)
-  
-  # 3. Bootstrapping Method
-  boot_results <- boot(Hg_change, statistic_function, R = 1000)
-  ci_bootstrap <- quantile(boot_results$t, c(alpha/2, 1-alpha/2))
-  
-  
-  # Check if the true mean falls within the confidence intervals
-  if (Hg_improve <= ci_asymptotic[1] && Hg_improve >= ci_asymptotic[2]) {
-    captured_asymptotic <- captured_asymptotic + 1
-  }
-  
-  if (Hg_improve <= ci_exact[1] && Hg_improve >= ci_exact[2]) {
-    captured_exact <- captured_exact + 1
-  }
-  
-  if (Hg_improve >= ci_bootstrap[1] && Hg_improve <= ci_bootstrap[2]) {
-    captured_bootstrap <- captured_bootstrap + 1
-  }
+# 3. Bootstrapping Method
+library(boot)
+
+# Define a function to calculate the statistic of interest (e.g., mean)
+statistic_function <- function(data, indices) {
+  sample_data <- data[indices]
+  return(mean(sample_data))
 }
 
-# Calculate capture rates
-capture_rate_asymptotic <- captured_asymptotic / num_iterations
-capture_rate_exact <- captured_exact / num_iterations
-capture_rate_bootstrap <- captured_bootstrap / num_iterations
+# Perform bootstrapping
 
-# Print capture rates
-cat("Capture Rate (Asymptotic Method):", capture_rate_asymptotic, "\n")
-cat("Capture Rate (Exact Method):", capture_rate_exact, "\n")
-cat("Capture Rate (Bootstrap Method):", capture_rate_bootstrap, "\n")
+set.seed(123)  # Set seed for reproducibility
+boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of bootstrap samples
 
-hist(Hg_change)
+# Calculate bootstrap confidence interval
+ci_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
 
-??CI
-
-```
-
-
-```{r}
-install.packages('Rmisc')
-library(Rmisc)
-
-CI(Hg_change)
-
-```
-
-
-
-## Квантили (напомнить)
-
-```{r}
+# Print results
+cat("Asymptotic Method (Z-interval):", ci_asymptotic, "Ширина:", ci_asymptotic[2]-ci_asymptotic[1], "\n")
+cat("Exact Method (t-interval):", ci_exact, "Ширина:", ci_exact[2]-ci_exact[1], "\n")
+cat("Bootstrap Method:", ci_bootstrap, "Ширина:", ci_bootstrap[2]-ci_bootstrap[1], "\n")
 
 
 ```
 
-## Доверительный интервал (количественная переменная, нормальное распределение)
+
+## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае экспоненциального распределения (симуляция)
 
 ```{r}
 
-sample_size <-  100 # Количество респондентов прошедших терапию
-Hg_improve  <-  20  # Истинное изменение уровня Hg
-Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
+sample_size <-  4 # Количество респондентов прошедших терапию
+mean  <-  20  # Истинное изменение уровня Hg
+sd    <-  3   # Разброс для истинного изменения уровня Hg
 
-alpha <- 0.05       # порог
-x_lower <- qnorm(alpha/2)    # нижняя граница 
-x_upper <- qnorm(1-alpha/2)  # верхняя граница
+# Confidence level
+confidence_level <- 0.95
 
 num_samples <- 10000  #  Сколько раз мы набираем выборку?
 
-missed <- sapply(1:num_samples, function (k) {
-   
-  Hg_change <- rnorm(sample_size, Hg_improve, Hg_sd)  # Формируем выборку
-  lower_bound <- mean(Hg_change) + x_lower*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем нижнюю границу доверительного интервала
-  upper_bound <- mean(Hg_change) + x_upper*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем верхнюю границу доверительного интервала
-  
-  true_or_false <- ifelse((lower_bound<Hg_improve) & (upper_bound>Hg_improve), 'Captured', 'Missed') # фиксируем результат
-
-})
-
-
-table(missed)
-
-
-```
-
-
-
-```{r}
-
-#install.packages('Rmisc')
-library(Rmisc)
-
-CI(Hg_change)[3]
-
-sample_size <-  3 # Количество респондентов прошедших терапию
-Hg_improve  <-  20  # Истинное изменение уровня Hg
-Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
-
-alpha <- 0.05       # порог
-#x_lower <- qnorm(alpha/2)    # нижняя граница
-#x_upper <- qnorm(1-alpha/2)  # верхняя граница
-
-num_samples <- 10000  #  Сколько раз мы набираем выборку?
+# 1. Asymptotic Method (Z-interval)
 
 missed <- sapply(1:num_samples, function (k) {
 
-  Hg_change <- rnorm(sample_size, Hg_improve, Hg_sd)  # Формируем выборку
-
-  CI(Hg_change)[3]
-  lower_bound <- CI(Hg_change)[3] # По выборке оцениваем нижнюю границу доверительного интервала
-  upper_bound <- CI(Hg_change)[1]  # По выборке оцениваем верхнюю границу доверительного интервала
-
-  true_or_false <- ifelse((lower_bound<Hg_improve) & (upper_bound>Hg_improve), 'Captured', 'Missed') # фиксируем результат
+  data <- rexp(sample_size, rate = 1/mean)  # Формируем выборку
+  sample_mean <- mean(data)
+  sample_sd <- sd(data)
+  
+  z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+  margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+  ci_asymptotic <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  true_or_false <- ifelse((ci_asymptotic[1]<mean) & (ci_asymptotic[2]>mean), 'Captured', 'Missed') # фиксируем результат
 
 })
 
-
-table(missed)
-
-
-
-```
+print("Asymptotic Method (Z-interval):")  
+print(table(missed))
+     
 
 
-## Доверительный интервал (количественная переменная, геометрическое распределение)
-
-```{r}
-# Z test
-
-sample_size <-  1000 # Количество респондентов прошедших терапию
-avg_days    <-  7 # Истинная продолжительность болезни
+# 2. Exact Method (t-interval)
 
 
-alpha <- 0.05       # порог
-x_lower <- qnorm(alpha/2)    # нижняя граница 
-x_upper <- qnorm(1-alpha/2)  # верхняя граница
-
-num_samples <- 10000  #  Сколько раз мы набираем выборку?
 
 missed <- sapply(1:num_samples, function (k) {
-   
-  my_group_deseases_duration <- rgeom(sample_size, 1/(avg_days+1)) # Формируем выборку 
+
+  data <- rexp(sample_size, rate = 1/mean)  # Формируем выборку
+  sample_mean <- mean(data)
+  sample_sd <- sd(data)
   
-  lower_bound <- mean(my_group_deseases_duration) + x_lower*sd(my_group_deseases_duration)/sqrt(sample_size)  # По выборке оцениваем нижнюю границу доверительного интервала
-  upper_bound <- mean(my_group_deseases_duration) + x_upper*sd(my_group_deseases_duration)/sqrt(sample_size)  # По выборке оцениваем верхнюю границу доверительного интервала
-  
-  true_or_false <- ifelse((lower_bound<avg_days) & (upper_bound>avg_days), 'Captured', 'Missed') # фиксируем результат
+  t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+  margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+  ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  true_or_false <- ifelse((ci_exact[1]<mean) & (ci_exact[2]>mean), 'Captured', 'Missed') # фиксируем результат
 
 })
 
-
-table(missed)
-
-```
+print("Exact Method (t-interval)")  
+print(table(missed))
 
 
 
-```{r}
-# Exact
+# 3. Bootstrapping Method
+library(boot)
 
-sample_size <-  10 # Количество респондентов прошедших терапию
-avg_days    <-  7 # Истинная продолжительность болезни
+# Define a function to calculate the statistic of interest (e.g., mean)
+statistic_function <- function(data, indices) {
+  sample_data <- data[indices]
+  return(mean(sample_data))
+}
 
+# Perform bootstrapping
 
-alpha <- 0.05       # порог
-x_lower <- qnorm(alpha/2)    # нижняя граница 
-x_upper <- qnorm(1-alpha/2)  # верхняя граница
-
-num_samples <- 10000  #  Сколько раз мы набираем выборку?
-
-missed <- sapply(1:num_samples, function (k) {
-   
-  my_group_deseases_duration <- rgeom(sample_size, 1/(avg_days+1)) # Формируем выборку 
+missed_bootstrapping <- sapply(1:num_samples, function(k) {
   
-  lower_bound <- CI(my_group_deseases_duration)[3] # По выборке оцениваем нижнюю границу доверительного интервала
-  upper_bound <- CI(my_group_deseases_duration)[1]  # По выборке оцениваем верхнюю границу доверительного интервала
+  data <- rexp(sample_size, rate = 1/mean)
+  # Perform bootstrapping for each sample
+  boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of bootstrap samples
   
-  true_or_false <- ifelse((lower_bound<avg_days) & (upper_bound>avg_days), 'Captured', 'Missed') # фиксируем результат
-
+  # Calculate bootstrap confidence interval
+  ci_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
+  
+  true_or_false <- ifelse((ci_bootstrap[1] < mean) & (ci_bootstrap[2] > mean), 'Captured', 'Missed')  # Record whether the true mean is captured
+  
+  return(true_or_false)
 })
 
-
-table(missed)
+print("Bootstrapping Method")
+print(table(missed_bootstrapping))
 
 
 ```
-
-
 
 
 ## От чего зависит ширина доверительного интервала?
 
-## Доверительный интервал для доли
+
+
+
+# Доверительный интервал для доли
+
+## Wald Interval  https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f
 
 
 ```{r}
-#https://www.codecamp.ru/blog/confidence-interval-in-r/
-#input sample size and sample proportion
-n <- 100
-p <- .56
 
-#calculate margin of error
-margin <- qnorm(0.975)*sqrt(p*(1-p)/n)
+waldInterval <- function(x, n, conf.level = 0.95){
+ p <- x/n
+ sd <- sqrt(p*((1-p)/n))
+ z <- qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) #returns the value of thresholds at which conf.level has to be cut at. for 95% CI, this is -1.96 and +1.96
+ ci <- p + z*sd
+ return(ci)
+ }
+#example
+waldInterval(x = 20, n =40) #this will return 0.345 and 0.655
 
-#calculate lower and upper bounds of confidence interval
-low <- p - margin
-low
+```
+
+```{r}
+
+numSamples <- 100 #number of samples to be drawn from population
+numTrials <- 1000 #this is the sample size (size of each sample)
+probs <- seq(0.001, 0.999, 0.01) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+for (i in 1:length(probs)) {
+ x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+ isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+ #since we have n different x here, we will have n different ci for #each of them. 
+ for (j in 1:numSamples) {
+ ci <- waldInterval(x = x[j], n = numTrials)
+ isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+ }
+ coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+}
 
 
-
-high <- p + margin
-high
+plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Wald Interval',
+ xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
+abline(h = 95, lty=3, col='maroon', lwd=2)
+axis(side = 2, at=seq(75,100, 5))
 
 
 ```
 
-## Доверительный интервал для разницы долей (зависимые и независимые выборки)
+
+## Clopper — Pearson Interval (Exact Interval)
+
+```{r}
+
+numSamples <- 100 #number of samples to be drawn from population
+numTrials <- 1000 #this is the sample size (size of each sample)
+probs <- seq(0.001, 0.999, 0.01) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+for (i in 1:length(probs)) {
+ x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+ isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+ #since we have n different x here, we will have n different ci for #each of them. 
+ for (j in 1:numSamples) {
+ ci <- binom.test(x = x[j], n = numTrials)$conf
+ isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+ }
+ coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+}
+plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Clopper — Pearson',
+ xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
+abline(h = 95, lty=3, col='maroon', lwd=2)
+axis(side = 2, at=seq(75,100, 5))
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
+# Создайте данные для двух групп (количество успешных и общее количество в каждой группе)
+successes_group_A <- 45
+total_group_A <- 100
+successes_group_B <- 60
+total_group_B <- 100
+
+# Оцените доли успешных событий в каждой группе
+prop_success_A <- successes_group_A / total_group_A
+prop_success_B <- successes_group_B / total_group_B
+
+# Оцените разницу в долях
+prop_diff <- prop_success_A - prop_success_B
+
+# Задайте уровень доверия (например, 95%)
+confidence_level <- 0.95
+
+# Вычислите стандартную ошибку разницы долей
+se_diff <- sqrt((prop_success_A * (1 - prop_success_A) / total_group_A) + (prop_success_B * (1 - prop_success_B) / total_group_B))
+
+# Вычислите критические значения Z для выбранного уровня доверия
+alpha <- 1 - confidence_level
+z_critical <- qnorm(1 - alpha / 2)
+
+# Вычислите границы доверительного интервала для разницы долей
+margin_of_error <- z_critical * se_diff
+conf_interval <- prop_diff + c(-margin_of_error, margin_of_error)
+
+# Выведите результаты
+cat("Разница долей:", prop_diff, "\n")
+cat(paste("Доверительный интервал (", 100 * confidence_level, "%): [", conf_interval[1], ", ", conf_interval[2], "]\n"))
+
+```
+
+
+
+
+
+
+
+# Доверительный интервал для разницы долей (зависимые и независимые выборки)
 
 ```{r}
 #https://www.codecamp.ru/blog/confidence-interval-in-r/
@@ -422,36 +590,9 @@ high
 
 
 
-## Доверительный интервал для среднего
-
-```{r}
-#https://www.codecamp.ru/blog/confidence-interval-in-r/
-
-#input sample size, sample mean, and sample standard deviation
-n <- 25
-xbar <- 300 
-s <- 18.5
-
-#calculate margin of error
-margin <- qt(0.975,df=n-1)*s/sqrt(n)
-
-#calculate lower and upper bounds of confidence interval
-low <- xbar - margin
-low
 
 
-high <- xbar + margin
-high
-
-
-  
-  
-```
-
-
-
-
-## Доверительный интервал для разницы средних (зависимые и независимые выборки)
+# Доверительный интервал для разницы средних (зависимые и независимые выборки)
 
 ```{r}
 #https://www.codecamp.ru/blog/confidence-interval-in-r/
@@ -579,10 +720,10 @@ shinyApp(ui, server)
 
 
 
-## Доверительный интервал для дисперсии
+# Доверительный интервал для дисперсии
 
 
-## Односторонние доверительные интервалы (исследования неменьшей эффективности или превосходства)
+# Односторонние доверительные интервалы (исследования неменьшей эффективности или превосходства)
 
 ```{r}
 
@@ -761,12 +902,9 @@ shinyApp(ui, server)
 ```
 
 
-## Точные доверительные интервалы
 
-## Бутстреп как метод построения доверительного интервала
-
-## Доверительный интервал для OR (отношение шансов)
-## https://search.r-project.org/CRAN/refmans/epitools/html/oddsratio.html
+# Доверительный интервал для OR (отношение шансов)
+# https://search.r-project.org/CRAN/refmans/epitools/html/oddsratio.html
 
 
 ```{r}
@@ -1366,7 +1504,69 @@ ggplot(data, aes(x = Dose, y = Response)) +
 ```
 
 
+# 95% conf interval for  OR 
+
+```{r}
+
+# Install and load the Epi package
+if (!requireNamespace("Epi", quietly = TRUE)) {
+  install.packages("Epi")
+}
+
+library(Epi)
+
+# Create a vector of sample sizes ranging from 10 to 100 with a step of 5
+sample_sizes <- seq(10, 100, by = 5)
+
+# Set the number of bootstrap iterations
+num_bootstraps <- 1000
+
+# Create an empty data frame to store the results
+results_df <- data.frame(SampleSize = numeric(0),
+                         OR = numeric(0),
+                         CI_exact_lower = numeric(0),
+                         CI_exact_upper = numeric(0),
+                         CI_bootstrap_lower = numeric(0),
+                         CI_bootstrap_upper = numeric(0))
+
+# Loop through each sample size and odds ratio and calculate confidence intervals
+for (sample_size in sample_sizes) {
+  for (or_value in odds_ratios) {
+    # Set the exposure and outcome counts based on the sample size
+    exposure_cases <- sample_size * 0.5
+    exposure_controls <- sample_size * 0.5
+    outcome_cases <- sample_size * 0.25
+    outcome_controls <- sample_size * 0.25
+
+    # Create a 2x2 table
+    tab <- matrix(c(outcome_cases, outcome_controls, exposure_cases, exposure_controls), nrow = 2)
+
+    # Calculate odds ratio and perform exact test
+    or_result <- epi.2by2(tab, conf.level = 0.95, method = "exact")
+
+    # Calculate bootstrap confidence intervals
+    boot_results <- boot.epi.2by2(tab, B = num_bootstraps)
+
+    # Append the results to the data frame
+    results_df <- rbind(results_df, data.frame(
+      SampleSize = sample_size,
+      OR = or_value,
+      CI_exact_lower = or_result$measure$measure[1],
+      CI_exact_upper = or_result$measure$measure[3],
+      CI_bootstrap_lower = quantile(boot_results$or, (1 - 0.95) / 2),
+      CI_bootstrap_upper = quantile(boot_results$or, 1 - (1 - 0.95) / 2)
+    ))
+  }
+}
+
+# View the results
+print(results_df)
 
 
+
+
+
+
+```
 
 
