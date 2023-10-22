@@ -514,131 +514,208 @@ print(table(missed_bootstrapping))
 # Доверительный интервал для разницы средних (зависимые и независимые выборки)
 
 
-## Экспоненциальное распределение
-
-```{r}
-
-
-
-# # Sample data for two independent samples (replace with your own data)
-# set.seed(123)
-# mean1 = 20
-# mean2 = 20
-# n1 = 100
-# n2 = 100
-# data1 <- rexp(n1, rate = 1/mean1)
-# data2 <- rexp(n2, rate = 1/mean2)
-# 
-# # Confidence level
-# confidence_level <- 0.95
-# 
-# # Perform independent two-sample t-test
-# t_test_result <- t.test(data1, data2, conf.level = confidence_level)
-# 
-# # Extract the confidence interval for the difference of means (asymptotic method)
-# ci_diff_means_asymptotic <- c(t_test_result$conf.int[1], t_test_result$conf.int[2])
-# width_asymptotic <- diff(ci_diff_means_asymptotic)
-# 
-# # Perform exact two-sample t-test
-# exact_t_test_result <- t.test(data1, data2, conf.level = confidence_level, var.equal = TRUE)
-# 
-# # Extract the confidence interval for the difference of means (exact method)
-# ci_diff_means_exact <- c(exact_t_test_result$conf.int[1], exact_t_test_result$conf.int[2])
-# width_exact <- diff(ci_diff_means_exact)
-# 
-# # Bootstrap Method
-# library(boot)
-# 
-# # Define a function to calculate the statistic of interest (e.g., mean)
-# statistic_function <- function(data, indices) {
-#   sample_data1 <- data[indices, 1]
-#   sample_data2 <- data[indices, 2]
-#   return(mean(sample_data1) - mean(sample_data2))
-# }
-# 
-# # Combine the two datasets into one
-# combined_data <- data.frame(Data1 = data1, Data2 = data2)
-# 
-# # Perform bootstrapping
-# set.seed(123)  # Set seed for reproducibility
-# boot_results <- boot(combined_data, statistic_function, R = 1000)  # R is the number of bootstrap samples
-# 
-# # Calculate bootstrap confidence interval
-# ci_diff_means_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
-# width_bootstrap <- diff(ci_diff_means_bootstrap)
-# 
-# # Print the results
-# cat("Asymptotic Method (Z-interval):", ci_diff_means_asymptotic, "Ширина:", width_asymptotic, "\n")
-# cat("Exact Method (t-interval):", ci_diff_means_exact, "Ширина:", width_exact, "\n")
-# cat("Bootstrap Method:", ci_diff_means_bootstrap, "Ширина:", width_bootstrap, "\n")
-
-
-
-
-```
-
-## ДМНормальное распределение
+## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае нормального распределения (независимые группы)
 
 
 ```{r}
 
-# Sample data for two independent samples (replace with your own data)
+# Пример данных для двух независимых выборок (замените их на ваши собственные данные)
 set.seed(123)
 mean1 = 20
 sd = 3
 mean2 = 20
-n1 = 100
-n2 = 100
+n1 = 10
+n2 = 10
 data1 <- rnorm(n1, mean = mean1, sd = sd)
 data2 <- rnorm(n2, mean = mean2, sd = sd)
 
-
-
-# Confidence level
+# Уровень доверия
 confidence_level <- 0.95
 
-# Perform independent two-sample t-test
+# Проведение независимого двухвыборочного t-теста
 t_test_result <- t.test(data1, data2, conf.level = confidence_level)
 
-# Extract the confidence interval for the difference of means (asymptotic method)
+# Извлечение доверительного интервала для разницы средних (асимптотический метод)
 ci_diff_means_asymptotic <- c(t_test_result$conf.int[1], t_test_result$conf.int[2])
 width_asymptotic <- diff(ci_diff_means_asymptotic)
 
-# Perform exact two-sample t-test
+# Проведение точного двухвыборочного t-теста
 exact_t_test_result <- t.test(data1, data2, conf.level = confidence_level, var.equal = TRUE)
 
-# Extract the confidence interval for the difference of means (exact method)
+# Извлечение доверительного интервала для разницы средних (точный метод)
 ci_diff_means_exact <- c(exact_t_test_result$conf.int[1], exact_t_test_result$conf.int[2])
 width_exact <- diff(ci_diff_means_exact)
 
-# Bootstrap Method
+# Метод бутстрэпа
 library(boot)
 
-# Define a function to calculate the statistic of interest (e.g., mean)
+# Определение функции для вычисления интересующей статистики (например, среднего)
 statistic_function <- function(data, indices) {
   sample_data1 <- data[indices, 1]
   sample_data2 <- data[indices, 2]
   return(mean(sample_data1) - mean(sample_data2))
 }
 
-# Combine the two datasets into one
+# Объединение двух наборов данных в один
 combined_data <- data.frame(Data1 = data1, Data2 = data2)
 
-# Perform bootstrapping
-set.seed(123)  # Set seed for reproducibility
-boot_results <- boot(combined_data, statistic_function, R = 1000)  # R is the number of bootstrap samples
+# Проведение бутстрэп-анализа
+set.seed(123)  # Задание начального значения для воспроизводимости
+boot_results <- boot(combined_data, statistic_function, R = 1000)  # R - количество бутстрэп-выборок
 
-# Calculate bootstrap confidence interval
+# Расчет бутстрэп доверительного интервала
 ci_diff_means_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
 width_bootstrap <- diff(ci_diff_means_bootstrap)
 
-# Print the results
-cat("Asymptotic Method (Z-interval):", ci_diff_means_asymptotic, "Ширина:", width_asymptotic, "\n")
-cat("Exact Method (t-interval):", ci_diff_means_exact, "Ширина:", width_exact, "\n")
-cat("Bootstrap Method:", ci_diff_means_bootstrap, "Ширина:", width_bootstrap, "\n")
+# Вывод результатов
+cat("Асимптотический метод (Z-интервал):", ci_diff_means_asymptotic, "Ширина:", width_asymptotic, "\n")
+cat("Точный метод (t-интервал):", ci_diff_means_exact, "Ширина:", width_exact, "\n")
+cat("Метод бутстрэпа:", ci_diff_means_bootstrap, "Ширина:", width_bootstrap, "\n")
 
 
 ```
+
+## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае нормального распределения (симуляция)
+
+```{r}
+
+# Задаем параметры симуляции
+set.seed(123)
+num_experiments <- 1000
+sample_size <- 10
+mean_group1 <- 10
+mean_group2 <- 10
+sd <- 2
+
+# Подготовка контейнеров для результатов
+results_asymptotic <- matrix(NA, nrow = num_experiments, ncol = 2)
+results_exact <- matrix(NA, nrow = num_experiments, ncol = 2)
+results_bootstrap <- matrix(NA, nrow = num_experiments, ncol = 2)
+
+
+# Проведение симуляции
+for (i in 1:num_experiments) {
+  # Генерация данных для двух групп
+  group1 <- rnorm(sample_size, mean = mean_group1, sd = sd)
+  group2 <- rnorm(sample_size, mean = mean_group2, sd = sd)
+
+  # Асимптотический метод
+  t_test_result_asymptotic <- t.test(group1, group2, conf.level = 0.95)
+  ci_asymptotic <- t_test_result_asymptotic$conf.int
+  width_asymptotic <- diff(ci_asymptotic)
+  results_asymptotic[i, 1] <- width_asymptotic
+  true_or_false <- ifelse((ci_asymptotic[1] < mean_group1 - mean_group2) & (ci_asymptotic[2] >  mean_group1 - mean_group2), 'Captured', 'Missed')
+  results_asymptotic[i, 2] <- true_or_false
+  
+
+  # Точный метод
+  t_test_result_exact <- t.test(group1, group2, conf.level = 0.95, var.equal = TRUE)
+  ci_exact <- t_test_result_exact$conf.int
+  width_exact <- diff(ci_exact)
+  results_exact[i, 1] <- width_exact
+  true_or_false <- ifelse((ci_exact[1] < mean_group1 - mean_group2) & (ci_exact[2] > mean_group1 - mean_group2), 'Captured', 'Missed')
+  results_exact[i, 2] <- true_or_false
+
+  # Bootstrap Method
+  combined_data <- data.frame(Group1 = group1, Group2 = group2)
+  boot_results <- boot(combined_data, statistic_function, R = 1000)
+  ci_bootstrap <- quantile(boot_results$t, c(0.025, 0.975))
+  width_bootstrap <- diff(ci_bootstrap)
+  results_bootstrap[i, 1] <- width_bootstrap
+  true_or_false <- ifelse((ci_bootstrap[1] < mean_group1 - mean_group2) & (ci_bootstrap[2] > mean_group1 - mean_group2), 'Captured', 'Missed')
+  results_bootstrap[i, 2] <- true_or_false
+}
+
+# Сравнение производительности методов
+mean_width_asymptotic <- mean(as.numeric(results_asymptotic[, 1]))
+mean_width_exact <- mean(as.numeric(results_exact[, 1]))
+mean_width_bootstrap <- mean(as.numeric(results_bootstrap[, 1]))
+
+cat("Средняя ширина доверительного интервала (Asymptotic Method):", mean_width_asymptotic, "\n")
+cat("Средняя ширина доверительного интервала (Exact Method)     :", mean_width_exact, "\n")
+cat("Средняя ширина доверительного интервала (Bootstrap Method) :", mean_width_bootstrap, "\n")
+
+
+cat("Asymptotic Method:", table(results_asymptotic[ , 2]), "\n")
+cat("Exact Method     :", table(results_exact[ , 2]), "\n")
+cat("Bootstrap Method :", table(results_bootstrap[ , 2]), "\n")
+
+
+
+
+```
+
+
+
+## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае экспоненциального  распределения (симуляция)
+
+```{r}
+
+# Задаем параметры симуляции
+set.seed(123)
+num_experiments <- 1000
+sample_size <- 10
+mean_group1 <- 10
+mean_group2 <- 10
+
+
+# Подготовка контейнеров для результатов
+results_asymptotic <- matrix(NA, nrow = num_experiments, ncol = 2)
+results_exact <- matrix(NA, nrow = num_experiments, ncol = 2)
+results_bootstrap <- matrix(NA, nrow = num_experiments, ncol = 2)
+
+
+# Проведение симуляции
+for (i in 1:num_experiments) {
+  # Генерация данных для двух групп
+  group1 <- random_numbers <- rexp(sample_size, rate = 1/mean_group1)
+  group2 <- random_numbers <- rexp(sample_size, rate = 1/mean_group2)
+
+  # Асимптотический метод
+  t_test_result_asymptotic <- t.test(group1, group2, conf.level = 0.95)
+  ci_asymptotic <- t_test_result_asymptotic$conf.int
+  width_asymptotic <- diff(ci_asymptotic)
+  results_asymptotic[i, 1] <- width_asymptotic
+  true_or_false <- ifelse((ci_asymptotic[1] < mean_group1 - mean_group2) & (ci_asymptotic[2] >  mean_group1 - mean_group2), 'Captured', 'Missed')
+  results_asymptotic[i, 2] <- true_or_false
+  
+
+  # Точный метод
+  t_test_result_exact <- t.test(group1, group2, conf.level = 0.95, var.equal = TRUE)
+  ci_exact <- t_test_result_exact$conf.int
+  width_exact <- diff(ci_exact)
+  results_exact[i, 1] <- width_exact
+  true_or_false <- ifelse((ci_exact[1] < mean_group1 - mean_group2) & (ci_exact[2] > mean_group1 - mean_group2), 'Captured', 'Missed')
+  results_exact[i, 2] <- true_or_false
+
+  # Bootstrap Method
+  combined_data <- data.frame(Group1 = group1, Group2 = group2)
+  boot_results <- boot(combined_data, statistic_function, R = 1000)
+  ci_bootstrap <- quantile(boot_results$t, c(0.025, 0.975))
+  width_bootstrap <- diff(ci_bootstrap)
+  results_bootstrap[i, 1] <- width_bootstrap
+  true_or_false <- ifelse((ci_bootstrap[1] < mean_group1 - mean_group2) & (ci_bootstrap[2] > mean_group1 - mean_group2), 'Captured', 'Missed')
+  results_bootstrap[i, 2] <- true_or_false
+}
+
+# Сравнение производительности методов
+mean_width_asymptotic <- mean(as.numeric(results_asymptotic[, 1]))
+mean_width_exact <- mean(as.numeric(results_exact[, 1]))
+mean_width_bootstrap <- mean(as.numeric(results_bootstrap[, 1]))
+
+cat("Средняя ширина доверительного интервала (Asymptotic Method):", mean_width_asymptotic, "\n")
+cat("Средняя ширина доверительного интервала (Exact Method)     :", mean_width_exact, "\n")
+cat("Средняя ширина доверительного интервала (Bootstrap Method) :", mean_width_bootstrap, "\n")
+
+
+cat("Asymptotic Method:", table(results_asymptotic[ , 2]), "\n")
+cat("Exact Method     :", table(results_exact[ , 2]), "\n")
+cat("Bootstrap Method :", table(results_bootstrap[ , 2]), "\n")
+
+
+```
+
+
 
 
 
@@ -792,9 +869,6 @@ high
 
 
 
-
-
-# Доверительный интервал для дисперсии
 
 
 # Односторонние доверительные интервалы (исследования неменьшей эффективности или превосходства)
