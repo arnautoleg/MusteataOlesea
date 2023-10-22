@@ -8,6 +8,9 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+library(tidyverse)
+
+
 ```
 
 # Точечные оценки
@@ -97,6 +100,39 @@ cat(quantile(a, 0.025),
 
 
 ```
+
+## От чего зависит ширина доверительного интервала?
+
+```{r}
+
+sample_size <- 3 # Количество пациентов, прошедших, терапию
+
+Hg_improve <- 20 # Истинное среднее изменение уровня Hg (в ГЕНЕРАЛЬНОЙ СОВОКУПНОСТИ)
+
+Hg_sd <- 3 # Разброс в улучшении Hg
+
+df_trial <- data.frame(
+  ID = 1:sample_size,
+  Hg_change = rnorm(sample_size, mean = Hg_improve, sd = Hg_sd)
+)
+
+t.test(df_trial$Hg_change)
+
+trial_results <- df_trial %>% 
+  t.test(Hg_change ~ 1, conf.level = 0.95, data = .) %>% 
+  broom::tidy() %>% 
+  dplyr::select(estimate, conf.low, conf.high) %>% 
+  mutate(CI_width = conf.high - conf.low)
+
+trial_results
+  
+# Что происходит с ДИ при изменении:
+# - объема выборки?
+# - стандартного отклонения?
+# - уровня доверия?
+
+```
+
 
 ## Доверительный интервал для среднего значения
 
@@ -436,8 +472,6 @@ print(table(missed_bootstrapping))
 
 ```
 
-
-## От чего зависит ширина доверительного интервала?
 
 
 # Доверительный интервал для разницы средних (зависимые и независимые выборки)
