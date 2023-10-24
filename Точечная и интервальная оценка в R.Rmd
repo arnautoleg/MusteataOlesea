@@ -15,12 +15,109 @@ library(tidyverse)
 
 # Точечные оценки
 
-## Показатели центральной тенденции
+## Описательные статистики для количественных переменных
 
-## Показатели разброса
+```{r}
+
+# Создаем набор данных
+data <- c(15, 23, 17, 32, 19, 25, 21, 28, 14, 30)
+
+# Среднее арифметическое (Mean)
+mean_value <- mean(data)
+
+# Медиана (Median)
+median_value <- median(data)
+
+# Мода (Mode) - для дискретных данных
+mode_value <- as.numeric(names(sort(table(data), decreasing = TRUE)[1]))
+
+# Минимум и максимум (Range)
+min_value <- min(data)
+max_value <- max(data)
+
+# Стандартное отклонение (Standard Deviation)
+sd_value <- sd(data)
+
+# Дисперсия (Variance)
+variance_value <- var(data)
+
+# Размах (Range)
+range_value <- max_value - min_value
+
+# Квантили (Quantiles)
+quantiles <- quantile(data, probs = c(0.25, 0.5, 0.75))
+
+# Вывод результатов
+cat("Среднее:", mean_value, "\n")
+cat("Медиана:", median_value, "\n")
+cat("Мода:", mode_value, "\n")
+cat("Минимум:", min_value, "\n")
+cat("Максимум:", max_value, "\n")
+cat("Стандартное отклонение:", sd_value, "\n")
+cat("Дисперсия:", variance_value, "\n")
+cat("Размах:", range_value, "\n")
+cat("25-й квантиль:", quantiles[1], "\n")
+cat("50-й квантиль (медиана):", quantiles[2], "\n")
+cat("75-й квантиль:", quantiles[3], "\n")
+
+
+
+```
 
 
 ## Описательные статистики для категориальных переменных
+
+
+```{r}
+
+# Создаем набор данных для категориальной переменной
+data <- c("Категория A", "Категория B", "Категория A", "Категория C", "Категория B", "Категория A", "Категория A", "Категория B")
+
+# Частота (Frequency)
+frequency_table <- table(data)
+cat("Частота каждой категории:\n")
+print(frequency_table)
+cat("\n")
+
+# Относительная частота (Relative Frequency)
+relative_frequency <- prop.table(frequency_table)
+cat("Относительная частота каждой категории:\n")
+print(relative_frequency)
+cat("\n")
+
+```
+
+
+## Описательные статистики для порядковых переменных
+
+
+```{r}
+
+# Создаем набор данных для порядковой переменной
+data <- c("Низкий", "Средний", "Высокий", "Средний", "Средний", "Низкий", "Высокий", "Средний")
+
+# Частота (Frequency)
+frequency_table <- table(data)
+cat("Частота каждой категории:\n")
+print(frequency_table)
+cat("\n")
+
+# Относительная частота (Relative Frequency)
+relative_frequency <- prop.table(frequency_table)
+cat("Относительная частота каждой категории:\n")
+print(relative_frequency)
+cat("\n")
+
+# Медиана (Median)
+# Соответствие между порядковыми значениями и числами
+ordered_values <- c("Низкий" = 1, "Средний" = 2, "Высокий" = 3)
+numeric_data <- ordered_values[data]
+
+median_value <- median(numeric_data)
+cat("Медиана:", median_value, "\n")
+
+```
+
 
 ## Зачем нужна визуализация?
 
@@ -273,6 +370,7 @@ cat("Exact Method (t-interval)     :", ci_exact,      "Ширина:", ci_exact[
 
 ```
 
+
 ### Asymptotic Method (Z-interval) (симуляция)
 
 ```{r}
@@ -403,6 +501,42 @@ cat("Точный ДИ (Z-интервал) - доля ловлений исти
 cat("Точный ДИ (t-интервал) - доля ловлений истинной разницы:", exact_t_captured / num_simulations, "\n")
 
 ```
+
+### Пакетная реализация в R
+
+```{r}
+library(BSDA)
+
+
+# Создание данных для одной выборки
+set.seed(123)
+mean <- 20
+sd <- 3
+sample_size <- 10
+data <- rnorm(sample_size, mean = mean, sd = sd)
+
+# Confidence level
+confidence_level <- 0.95
+
+# Асимптотический доверительный интервал для среднего
+z_test_result <- z.test(x=data, conf.level = confidence_level, sigma.x = sd(data), mu = mean)
+ci_asymptotic <- z_test_result$conf.int
+cat("Асимптотический ДИ (Z-interval) для среднего                  :", ci_asymptotic, "\n")
+
+# Точный доверительный интервал для среднего (с известной дисперсией)
+z_test_result <- z.test(x=data, conf.level = confidence_level, sigma.x = sd, mu = mean)
+ci_exact_z <- z_test_result$conf.int
+cat("Точный ДИ (Z-interval) для среднего                           :", ci_exact_z, "\n")
+
+
+# Точный доверительный интервал для среднего (с неизвестной дисперсией)
+ci_exact_unknown_var <- t.test(data, conf.level = confidence_level, var.equal = FALSE)$conf.int
+cat("Точный ДИ (t-interval) для среднего (с неизвестной дисперсией):", ci_exact_unknown_var, "\n")
+
+
+```
+
+
 
 
 ### Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (Z-intervalt-interval), Exact Method (t-interval) в случае экспоненциального распределения (симуляция)
