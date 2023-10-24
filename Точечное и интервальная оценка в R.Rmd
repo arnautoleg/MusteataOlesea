@@ -19,7 +19,6 @@ library(tidyverse)
 
 ## Показатели разброса
 
-## Отношение шансов
 
 ## Описательные статистики для категориальных переменных
 
@@ -143,11 +142,11 @@ ggplot(data = data_df, aes(x = Value)) +
 
 ```{r}
 
-sample_size <- 3 # Количество пациентов, прошедших, терапию
+sample_size <- 300 # Количество пациентов, прошедших, терапию
 
 Hg_improve <- 20 # Истинное среднее изменение уровня Hg (в ГЕНЕРАЛЬНОЙ СОВОКУПНОСТИ)
 
-Hg_sd <- 3 # Разброс в улучшении Hg
+Hg_sd <- 6 # Разброс в улучшении Hg
 
 df_trial <- data.frame(
   ID = 1:sample_size,
@@ -174,41 +173,16 @@ trial_results
 
 ## Доверительный интервал для среднего значения
 
-```{r}
 
-sample_size <-  100 # Количество респондентов прошедших терапию
-Hg_improve  <-  20  # Истинное изменение уровня Hg
-Hg_sd       <-  3   # Разброс для истинного изменения уровня Hg
-
-
-alpha <- 0.05       # порог
-x_lower <- qnorm(alpha/2)   # нижняя граница 
-x_upper <- qnorm(1-alpha/2)  # верхняя граница
-
-num_samples <- 10000  #  Сколько раз мы набираем выборку?
-
-missed <- sapply(1:num_samples, function (k) {
-
-  Hg_change <- rnorm(sample_size, Hg_improve, Hg_sd)  # Формируем выборку
-  lower_bound <- mean(Hg_change) + x_lower*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем нижнюю границу доверительного интервала
-  upper_bound <- mean(Hg_change) + x_upper*sd(Hg_change)/sqrt(sample_size)  # По выборке оцениваем верхнюю границу доверительного интервала
-
-  true_or_false <- ifelse((lower_bound<Hg_improve) & (upper_bound>Hg_improve), 'Captured', 'Missed') # фиксируем результат
-
-})
-
-table(missed)
-
-```
-
-
-## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае нормального распределения
+### Асимптотический ДИ - нормальное распределение
 
 ```{r}
 
-# Sample data (replace this with your own dataset)
 set.seed(123)
-data <- rnorm(100, mean = 20, sd = 3)
+
+mean = 20
+sd = 3
+data <- rnorm(10, mean = mean, sd = sd)
 
 # Confidence level
 confidence_level <- 0.95
@@ -220,130 +194,218 @@ sample_sd <- sd(data)
 # Sample size
 sample_size <- length(data)
 
-# 1. Asymptotic Method (Z-interval)
+# Z-interval
 z_critical <- qnorm(1 - (1 - confidence_level) / 2)
 margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
 ci_asymptotic <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
 
-# 2. Exact Method (t-interval)
-t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
-margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
-ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-
-# 3. Bootstrapping Method
-library(boot)
-
-# Define a function to calculate the statistic of interest (e.g., mean)
-statistic_function <- function(data, indices) {
-  sample_data <- data[indices]
-  return(mean(sample_data))
-}
-
-# Perform bootstrapping
-
-set.seed(123)  # Set seed for reproducibility
-boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of bootstrap samples
-
-# Calculate bootstrap confidence interval
-ci_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
-
-# Print results
 cat("Asymptotic Method (Z-interval):", ci_asymptotic, "Ширина:", ci_asymptotic[2]-ci_asymptotic[1], "\n")
-cat("Exact Method (t-interval):", ci_exact, "Ширина:", ci_exact[2]-ci_exact[1], "\n")
-cat("Bootstrap Method:", ci_bootstrap, "Ширина:", ci_bootstrap[2]-ci_bootstrap[1], "\n")
-
 
 ```
 
 
-## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае нормального распределения (симуляция)
+### Точный ДИ Дисперсия известна (н-р погрешность прибора) - нормальное распределение
+
 
 ```{r}
 
-sample_size <-  4 # Количество респондентов прошедших терапию
-mean  <-  20  # Истинное изменение уровня Hg
-sd    <-  3   # Разброс для истинного изменения уровня Hg
+set.seed(123)
+
+mean = 20
+sd = 3
+data <- rnorm(10, mean = mean, sd = sd)
 
 # Confidence level
 confidence_level <- 0.95
 
-num_samples <- 10000  #  Сколько раз мы набираем выборку?
+# Sample mean and standard deviation
+sample_mean <- mean(data)
+#sample_sd <- sd(data)
 
-# 1. Asymptotic Method (Z-interval)
+# Sample size
+sample_size <- length(data)
 
-missed <- sapply(1:num_samples, function (k) {
+# Z-interval
+z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+margin_of_error <- z_critical * (sd / sqrt(sample_size))
+ci_exact_z <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
 
-  data <- rnorm(sample_size, mean = mean, sd = sd)  # Формируем выборку
+cat("Exact Method (Z-interval):", ci_exact_z, "Ширина:", ci_exact_z[2]-ci_exact_z[1], "\n")
+
+
+```
+
+### Точный ДИ Дисперсия неизвестна (распределение chi squared, t, Теорема Фишера - (n-1)*s**2/sigma**2 имеет chi squared распределение с df=n-1) - выборка из нормального распределения
+
+```{r}
+
+set.seed(123)
+
+mean = 20
+sd = 3
+data <- rnorm(10, mean = mean, sd = sd)
+
+# Confidence level
+confidence_level <- 0.95
+
+# Sample mean and standard deviation
+sample_mean <- mean(data)
+sample_sd <- sd(data)  # Используем стандартное отклонение из выборки
+sample_size <- length(data)
+
+t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+cat("Exact Method (t-interval):", ci_exact, "Ширина:", ci_exact[2]-ci_exact[1], "\n")
+
+
+
+```
+
+### Все вместе
+
+```{r}
+
+cat("Asymptotic Method (Z-interval):", ci_asymptotic, "Ширина:", ci_asymptotic[2]-ci_asymptotic[1], "\n")
+cat("Exact Method (Z-interval)     :", ci_exact_z, "Ширина:", ci_exact_z[2]-ci_exact_z[1], "\n")
+cat("Exact Method (t-interval)     :", ci_exact,      "Ширина:", ci_exact[2]-ci_exact[1], "\n")
+
+
+```
+
+### Asymptotic Method (Z-interval) (симуляция)
+
+```{r}
+
+# Начальные параметры
+set.seed(123)
+
+mean = 20
+sd = 3
+confidence_level <- 0.95
+sample_size <- 10
+num_simulations <- 1000
+
+# Функция для создания доверительного интервала
+create_confidence_interval <- function(data, confidence_level, method) {
   sample_mean <- mean(data)
   sample_sd <- sd(data)
+  sample_size <- length(data)
   
-  z_critical <- qnorm(1 - (1 - confidence_level) / 2)
-  margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
-  ci_asymptotic <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-  true_or_false <- ifelse((ci_asymptotic[1]<mean) & (ci_asymptotic[2]>mean), 'Captured', 'Missed') # фиксируем результат
-
-})
-
-print("Asymptotic Method (Z-interval):")  
-print(table(missed))
-     
-
-
-# 2. Exact Method (t-interval)
-
-
-
-missed <- sapply(1:num_samples, function (k) {
-
-  data <- rnorm(sample_size, mean = mean, sd = sd)  # Формируем выборку
-  sample_mean <- mean(data)
-  sample_sd <- sd(data)
+  if (method == "asymptotic") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+  } 
   
-  t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
-  margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
-  ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-  true_or_false <- ifelse((ci_exact[1]<mean) & (ci_exact[2]>mean), 'Captured', 'Missed') # фиксируем результат
-
-})
-
-print("Exact Method (t-interval)")  
-print(table(missed))
-
-
-
-# 3. Bootstrapping Method
-library(boot)
-
-# Define a function to calculate the statistic of interest (e.g., mean)
-statistic_function <- function(data, indices) {
-  sample_data <- data[indices]
-  return(mean(sample_data))
+  
+  ci <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  return(ci)
 }
 
-# Perform bootstrapping
+# Инициализируем переменные для подсчета количества "ловлений" истинного среднего
+asymptotic_captured <- 0
 
-missed_bootstrapping <- sapply(1:num_samples, function(k) {
-  
+
+# Цикл для симуляции num_simulations раз
+for (i in 1:num_simulations) {
   data <- rnorm(sample_size, mean = mean, sd = sd)
-  # Perform bootstrapping for each sample
-  boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of bootstrap samples
   
-  # Calculate bootstrap confidence interval
-  ci_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
-  
-  true_or_false <- ifelse((ci_bootstrap[1] < mean) & (ci_bootstrap[2] > mean), 'Captured', 'Missed')  # Record whether the true mean is captured
-  
-  return(true_or_false)
-})
+  # Рассчитываем доверительные интервалы для каждого метода
+  ci_asymptotic <- create_confidence_interval(data, confidence_level, "asymptotic")
 
-print("Bootstrapping Method")
-print(table(missed_bootstrapping))
+  
+  # Проверяем, ловит ли доверительный интервал истинное значение среднего
+  if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
+    asymptotic_captured <- asymptotic_captured + 1
+  }
+  
+  
+}
+
+# Выводим результаты
+cat("Асимптотический ДИ - доля ловлений истинной разницы    :", asymptotic_captured / num_simulations, "\n")
 
 
 ```
 
 
-## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае экспоненциального распределения
+
+### Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (Z-intervalt-interval), Exact Method (t-interval) в случае нормального распределения (симуляция)
+
+```{r}
+
+# Начальные параметры
+set.seed(123)
+
+mean = 20
+sd = 3
+confidence_level <- 0.95
+sample_size <- 10
+num_simulations <- 1000
+
+# Функция для создания доверительного интервала
+create_confidence_interval <- function(data, confidence_level, method) {
+  sample_mean <- mean(data)
+  sample_sd <- sd(data)
+  sample_size <- length(data)
+  
+  if (method == "asymptotic") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+  } 
+  
+  if (method == "exact_z") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (sd / sqrt(sample_size))
+  } 
+  
+  if (method == "exact_t") {
+    t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+    margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+  } 
+  
+  
+  ci <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  return(ci)
+}
+
+# Инициализируем переменные для подсчета количества "ловлений" истинного среднего
+asymptotic_captured <- 0
+exact_z_captured <- 0
+exact_t_captured <- 0
+
+# Цикл для симуляции num_simulations раз
+for (i in 1:num_simulations) {
+  data <- rnorm(sample_size, mean = mean, sd = sd)
+  
+  # Рассчитываем доверительные интервалы для каждого метода
+  ci_asymptotic <- create_confidence_interval(data, confidence_level, "asymptotic")
+  ci_exact_z <- create_confidence_interval(data, confidence_level, "exact_z")
+  ci_exact_t <- create_confidence_interval(data, confidence_level, "exact_t")
+  
+  # Проверяем, ловит ли доверительный интервал истинное значение среднего
+  if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
+    asymptotic_captured <- asymptotic_captured + 1
+  }
+  
+  if (ci_exact_z[1] <= mean && ci_exact_z[2] >= mean) {
+    exact_z_captured <- exact_z_captured + 1
+  }
+  
+  if (ci_exact_t[1] <= mean && ci_exact_t[2] >= mean) {
+    exact_t_captured <- exact_t_captured + 1
+  }
+}
+
+# Выводим результаты
+cat("Асимптотический ДИ - доля ловлений истинной разницы    :", asymptotic_captured / num_simulations, "\n")
+cat("Точный ДИ (Z-интервал) - доля ловлений истинной разницы:", exact_z_captured / num_simulations, "\n")
+cat("Точный ДИ (t-интервал) - доля ловлений истинной разницы:", exact_t_captured / num_simulations, "\n")
+
+```
+
+
+### Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (Z-intervalt-interval), Exact Method (t-interval) в случае экспоненциального распределения (симуляция)
 
 
 ```{r}
@@ -370,143 +432,77 @@ hist(data_exponential)
 
 ```
 
+
 ```{r}
 
-# Sample data (replace this with your own dataset)
+
+# Начальные параметры
 set.seed(123)
+
 mean = 20
-n=100
-data <-  rexp(n, rate = 1/mean)
-
-# Confidence level
+sd = 3
 confidence_level <- 0.95
+sample_size <- 10
+num_simulations <- 1000
 
-# Sample mean and standard deviation
-sample_mean <- mean(data)
-sample_sd <- sd(data)
-
-# Sample size
-sample_size <- length(data)
-
-# 1. Asymptotic Method (Z-interval)
-z_critical <- qnorm(1 - (1 - confidence_level) / 2)
-margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
-ci_asymptotic <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-
-# 2. Exact Method (t-interval)
-t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
-margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
-ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-
-# 3. Bootstrapping Method
-library(boot)
-
-# Define a function to calculate the statistic of interest (e.g., mean)
-statistic_function <- function(data, indices) {
-  sample_data <- data[indices]
-  return(mean(sample_data))
-}
-
-# Perform bootstrapping
-
-set.seed(123)  # Set seed for reproducibility
-boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of bootstrap samples
-
-# Calculate bootstrap confidence interval
-ci_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
-
-# Print results
-cat("Asymptotic Method (Z-interval):", ci_asymptotic, "Ширина:", ci_asymptotic[2]-ci_asymptotic[1], "\n")
-cat("Exact Method (t-interval):", ci_exact, "Ширина:", ci_exact[2]-ci_exact[1], "\n")
-cat("Bootstrap Method:", ci_bootstrap, "Ширина:", ci_bootstrap[2]-ci_bootstrap[1], "\n")
-
-
-```
-
-
-## Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (t-interval), Bootstrap Method в случае экспоненциального распределения (симуляция)
-
-```{r}
-
-sample_size <-  10 # Количество респондентов прошедших терапию
-mean  <-  20  # Истинное изменение уровня Hg
-sd    <-  3   # Разброс для истинного изменения уровня Hg
-
-# Confidence level
-confidence_level <- 0.95
-
-num_samples <- 1000  #  Сколько раз мы набираем выборку?
-
-# 1. Asymptotic Method (Z-interval)
-
-missed <- sapply(1:num_samples, function (k) {
-
-  data <- rexp(sample_size, rate = 1/mean)  # Формируем выборку
+# Функция для создания доверительного интервала
+create_confidence_interval <- function(data, confidence_level, method) {
   sample_mean <- mean(data)
   sample_sd <- sd(data)
+  sample_size <- length(data)
   
-  z_critical <- qnorm(1 - (1 - confidence_level) / 2)
-  margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
-  ci_asymptotic <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-  true_or_false <- ifelse((ci_asymptotic[1]<mean) & (ci_asymptotic[2]>mean), 'Captured', 'Missed') # фиксируем результат
-
-})
-
-print("Asymptotic Method (Z-interval):")  
-print(table(missed))
-     
-
-
-# 2. Exact Method (t-interval)
-
-
-
-missed <- sapply(1:num_samples, function (k) {
-
-  data <- rexp(sample_size, rate = 1/mean)  # Формируем выборку
-  sample_mean <- mean(data)
-  sample_sd <- sd(data)
+  if (method == "asymptotic") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+  } 
   
-  t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
-  margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
-  ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-  true_or_false <- ifelse((ci_exact[1]<mean) & (ci_exact[2]>mean), 'Captured', 'Missed') # фиксируем результат
-
-})
-
-print("Exact Method (t-interval)")  
-print(table(missed))
-
-
-
-# 3. Bootstrapping Method
-library(boot)
-
-# Define a function to calculate the statistic of interest (e.g., mean)
-statistic_function <- function(data, indices) {
-  sample_data <- data[indices]
-  return(mean(sample_data))
+  if (method == "exact_z") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (round(sample_sd, 0) / sqrt(sample_size))
+  } 
+  
+  if (method == "exact_t") {
+    t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+    margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+  } 
+  
+  
+  ci <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  return(ci)
 }
 
-# Perform bootstrapping
+# Инициализируем переменные для подсчета количества "ловлений" истинного среднего
+asymptotic_captured <- 0
+exact_z_captured <- 0
+exact_t_captured <- 0
 
-missed_bootstrapping <- sapply(1:num_samples, function(k) {
-  
+# Цикл для симуляции num_simulations раз
+for (i in 1:num_simulations) {
   data <- rexp(sample_size, rate = 1/mean)
-  # Perform bootstrapping for each sample
-  boot_results <- boot(data, statistic_function, R = 1000)  # R is the number of bootstrap samples
   
-  # Calculate bootstrap confidence interval
-  ci_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
+  # Рассчитываем доверительные интервалы для каждого метода
+  ci_asymptotic <- create_confidence_interval(data, confidence_level, "asymptotic")
+  ci_exact_z <- create_confidence_interval(data, confidence_level, "exact_z")
+  ci_exact_t <- create_confidence_interval(data, confidence_level, "exact_t")
   
-  true_or_false <- ifelse((ci_bootstrap[1] < mean) & (ci_bootstrap[2] > mean), 'Captured', 'Missed')  # Record whether the true mean is captured
+  # Проверяем, ловит ли доверительный интервал истинное значение среднего
+  if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
+    asymptotic_captured <- asymptotic_captured + 1
+  }
   
-  return(true_or_false)
-})
+  if (ci_exact_z[1] <= mean && ci_exact_z[2] >= mean) {
+    exact_z_captured <- exact_z_captured + 1
+  }
+  
+  if (ci_exact_t[1] <= mean && ci_exact_t[2] >= mean) {
+    exact_t_captured <- exact_t_captured + 1
+  }
+}
 
-print("Bootstrapping Method")
-print(table(missed_bootstrapping))
-
+# Выводим результаты
+cat("Асимптотический ДИ - доля ловлений истинной разницы    :", asymptotic_captured / num_simulations, "\n")
+cat("Точный ДИ (Z-интервал) - доля ловлений истинной разницы:", exact_z_captured / num_simulations, "\n")
+cat("Точный ДИ (t-интервал) - доля ловлений истинной разницы:", exact_t_captured / num_simulations, "\n")
 
 ```
 
@@ -647,6 +643,14 @@ ny <- length(y)
 sd_x <- sd(x)
 sd_y <- sd(y)
 
+
+library(car)
+# Perform Levene's test
+result <- leveneTest(c(x, y), as.factor(rep(c("Group1", "Group2"), each = nx)))
+
+# Print the test result
+print(result)
+
 # Degrees of freedom
 df1 <- nx - 1
 df2 <- ny - 1
@@ -741,49 +745,7 @@ cat("Confidence Interval by Welch                     [", round(left_w, 4), ";",
 
 
 
-
-
-### Метод бутстрэпа
-
-
-```{r}
-
-
-# library(boot)
-# 
-# # Определение функции для вычисления интересующей статистики (например, среднего)
-# statistic_function <- function(data, indices) {
-#   sample_data1 <- data[indices, 1]
-#   sample_data2 <- data[indices, 2]
-#   return(mean(sample_data1) - mean(sample_data2))
-# }
-# 
-# # Объединение двух наборов данных в один
-# combined_data <- data.frame(Data1 = data1, Data2 = data2)
-# 
-# # Проведение бутстрэп-анализа
-# set.seed(123)  # Задание начального значения для воспроизводимости
-# boot_results <- boot(combined_data, statistic_function, R = 1000)  # R - количество бутстрэп-выборок
-# 
-# # Расчет бутстрэп доверительного интервала
-# ci_diff_means_bootstrap <- quantile(boot_results$t, c((1 - confidence_level) / 2, 1 - (1 - confidence_level) / 2))
-# width_bootstrap <- diff(ci_diff_means_bootstrap)
-# 
-# # Print the confidence interval
-# cat("Confidence Interval for the Difference in Means Bootstrap Method (95%):", ci_diff_means_bootstrap, "\n")
-
-
-```
-
-
-
-## Доверительный интервал для разницы средних (независимые выборки)
-
-### Точный ДИ (Дисперсия неизвеcтна аналогично одинарной средней, статистика Стьюдента - распределение t)
-
-
-
-## Сравнительная характеристика (Asymptotic Confidence Interval, Exact Confidence Interval with Known Variances, Exact Confidence Interval with Unknown Variances, Confidence Interval by Welch в случае нормального распределения (независимые группы)
+### Сравнительная характеристика (Asymptotic Confidence Interval, Exact Confidence Interval with Known Variances, Exact Confidence Interval with Unknown Variances, Confidence Interval by Welch в случае нормального распределения (независимые группы)
 
 ### Средняя ширина ДИ
 
@@ -902,8 +864,8 @@ set.seed(123)
 mean1 <- 20
 sd <- 3
 mean2 <- 20
-n1 <- 5
-n2 <- 5
+n1 <- 10
+n2 <- 10
 
 
 # Инициализируем переменные для подсчета количества "ловлений" истинной разницы
@@ -1000,7 +962,7 @@ cat("Примерный ДИ (Дисперсии не извеcтны и не р
 ```
 
 
-## Сравнительная характеристика (Asymptotic Confidence Interval, Exact Confidence Interval with Known Variances, Exact Confidence Interval with Unknown Variances, Confidence Interval by Welch в случае экспоненциального распределения (независимые группы)
+### Сравнительная характеристика (Asymptotic Confidence Interval, Exact Confidence Interval with Known Variances, Exact Confidence Interval with Unknown Variances, Confidence Interval by Welch в случае экспоненциального распределения (независимые группы)
 
 
 ### Точность ДИ
@@ -1116,6 +1078,12 @@ cat("Примерный ДИ (Дисперсии не извеcтны и не р
 
 
 ```
+
+
+## Доверительный интервал для разницы средних (независимые выборки)
+
+### Точный ДИ (Дисперсия неизвеcтна аналогично одинарной средней, статистика Стьюдента - распределение t)
+
 
 
 # Доверительный интервал для доли
