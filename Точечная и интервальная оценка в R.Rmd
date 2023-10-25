@@ -1222,6 +1222,67 @@ cat("Примерный ДИ (Дисперсии не извеcтны и не р
 
 # Доверительный интервал для доли
 
+## Распределение Бернулли (Р и 1-Р), где Р среднее и Р*(1-Р)/n дисперсия
+
+
+```{r}
+
+# sample_size <- 100 # Количество пациентов, прошедших терапию в каждой из групп
+# 
+# p_recovery <- 0.2 # Истинная вероятность выздоровления (в ГЕНЕРАЛЬНОЙ СОВОКУПНОСТИ)
+# 
+# df_trial <- data.frame(
+#   patient_ID = 1:sample_size,
+#   recovery_status = sample(c(1,0), sample_size, replace = TRUE, prob = c(p_recovery, 1 - p_recovery))
+# )
+# 
+# trial_results <- df_trial %>% 
+#   count(recovery_status) %>% 
+#   filter(recovery_status == 1) %>% 
+#   rowwise() %>%
+#   dplyr::summarise(broom::tidy(prop.test(x = n, n = sample_size, conf.level = 0.95))) %>% 
+#   dplyr::select(estimate, conf.low, conf.high) 
+
+
+```
+
+
+
+## Асимптотический ДИ (Wald) и Точный ДИ (Clopper-Pearson)
+
+```{r}
+
+# install.packages("binom")
+
+library(binom)
+
+# Задайте размер выборки (n) и количество успешных наблюдений (x)
+n <- 10 # Размер выборки
+x <- 1  # Количество успешных наблюдений
+
+# Задайте уровень доверия (например, 95%)
+alpha <- 0.05
+
+# Рассчитайте доверительный интервал методом Клоппера-Пирсона
+pearson_ci <- binom.confint(x, n, method = "exact", conf.level = 1 - alpha)
+
+# Рассчитайте доверительный интервал методом Уолда
+wald_ci <- binom.confint(x, n, method = "asymptotic", conf.level = 1 - alpha)
+
+# Выведите результаты с красивым форматированием
+
+cat("\nМетод Уолда (Wald):\n")
+cat("Нижний предел, Верхний предел :", wald_ci$lower, wald_ci$upper, "Ширина:", wald_ci$upper - wald_ci$lower,"\n")
+
+cat("Метод Клоппера-Пирсона (Clopper-Pearson):\n")
+cat("Нижний предел, Верхний предел:", pearson_ci$lower, pearson_ci$upper, "Ширина:", pearson_ci$upper - pearson_ci$lower,"\n")
+
+
+
+```
+
+
+
 ## Wald Interval  https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f
 
 
@@ -1235,16 +1296,13 @@ waldInterval <- function(x, n, conf.level = 0.95){
  return(ci)
  }
 #example
-waldInterval(x = 20, n =40) #this will return 0.345 and 0.655
+#waldInterval(x = 20, n =100) #this will return 0.345 and 0.655
 
-```
 
-```{r}
-
-numSamples <- 50 #number of samples to be drawn from population
-numTrials <- 1000 #this is the sample size (size of each sample)
+numSamples <- 100               #number of samples to be drawn from population
+numTrials <- 1000                #this is the sample size (size of each sample)
 probs <- seq(0.001, 0.999, 0.01) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
-coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+coverage <- as.numeric()         #initializing an empty vector to store coverage for each of the probs defined above
 for (i in 1:length(probs)) {
  x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
  isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
@@ -1295,83 +1353,173 @@ axis(side = 2, at=seq(75,100, 5))
 
 
 
-
-
+## Точность ДИ
 
 ```{r}
 
-# Создайте данные для двух групп (количество успешных и общее количество в каждой группе)
-successes_group_A <- 45
-total_group_A <- 100
-successes_group_B <- 60
-total_group_B <- 100
+# Истинное значение доли
+true_p <- 0.5
 
-# Оцените доли успешных событий в каждой группе
-prop_success_A <- successes_group_A / total_group_A
-prop_success_B <- successes_group_B / total_group_B
+# Размер выборки и количество повторений симуляции
+n <- 10
+num_simulations <- 1000
 
-# Оцените разницу в долях
-prop_diff <- prop_success_A - prop_success_B
+# Инициализация счетчиков для подсчета успешных симуляций
+wald_success_count <- 0
+pearson_success_count <- 0
 
-# Задайте уровень доверия (например, 95%)
-confidence_level <- 0.95
+# Цикл для проведения симуляции
+for (i in 1:num_simulations) {
+  # Генерация случайной выборки из биномиального распределения
+  sample_data <- rbinom(n, 1, true_p)
+  
+  # Рассчет доверительных интервалов
+  wald_ci <- binom.confint(sum(sample_data), n, method = "asymptotic", conf.level = 0.95)
+  pearson_ci <- binom.confint(sum(sample_data), n, method = "exact", conf.level = 0.95)
+  
+  # Проверка, ловит ли интервал истинное значение
+  if (true_p >= wald_ci$lower && true_p <= wald_ci$upper) {
+    wald_success_count <- wald_success_count + 1
+  }
+  if (true_p >= pearson_ci$lower && true_p <= pearson_ci$upper) {
+    pearson_success_count <- pearson_success_count + 1
+  }
+}
 
-# Вычислите стандартную ошибку разницы долей
-se_diff <- sqrt((prop_success_A * (1 - prop_success_A) / total_group_A) + (prop_success_B * (1 - prop_success_B) / total_group_B))
+# Подсчет процента успешных симуляций
+wald_success_rate <- wald_success_count / num_simulations * 100
+pearson_success_rate <- pearson_success_count / num_simulations * 100
 
-# Вычислите критические значения Z для выбранного уровня доверия
-alpha <- 1 - confidence_level
-z_critical <- qnorm(1 - alpha / 2)
-
-# Вычислите границы доверительного интервала для разницы долей
-margin_of_error <- z_critical * se_diff
-conf_interval <- prop_diff + c(-margin_of_error, margin_of_error)
-
-# Выведите результаты
-cat("Разница долей:", prop_diff, "\n")
-cat(paste("Доверительный интервал (", 100 * confidence_level, "%): [", conf_interval[1], ", ", conf_interval[2], "]\n"))
+# Вывод результатов
+cat("Метод Уолда (Wald) успешно охватил истинное значение в ", wald_success_rate, "% симуляций.\n")
+cat("Метод Клоппера-Пирсона (Clopper-Pearson) успешно охватил истинное значение в ", pearson_success_rate, "% симуляций.\n")
 
 
 
 ```
-
-
-
 
 
 
 
 # Доверительный интервал для разницы долей (зависимые и независимые выборки)
 
-```{r}
-#https://www.codecamp.ru/blog/confidence-interval-in-r/
-
-#input sample sizes and sample proportions
-n1 <- 100
-p1 <- .62
-
-n2 <- 100
-p2 <- .46
-
-#calculate margin of error
-margin <- qnorm(0.975)*sqrt(p1*(1-p1)/n1 + p2*(1-p2)/n2)
-
-#calculate lower and upper bounds of confidence interval
-low <- (p1-p2) - margin
-low
-
-high <- (p1-p2) + margin
-high
+```{r, warning=FALSE}
 
 
-#https://rpubs.com/AllaT/conf-ints ДОБАВИТЬ !!!!
+# Пример данных
+success_group1 <- 6
+total_group1 <- 10
+success_group2 <- 9
+total_group2 <- 10
+
+
+# Вычисление асимптотического доверительного интервала для разницы долей (независимые выборки)
+asym_ci <- prop.test(x = c(success_group1, success_group2), n = c(total_group1, total_group2))
+asym_lower <- round(asym_ci$conf.int[1], 2)
+asym_upper <- round(asym_ci$conf.int[2], 2)
+
+# Вычисление точного доверительного интервала для разницы долей (независимые выборки)
+# Установите и загрузите пакет ExactCIdiff, если это еще не было сделано
+# install.packages('ExactCIdiff')
+library(ExactCIdiff)
+
+# Calculate the exact confidence interval
+exact_ci <- BinomCI(total_group1,total_group2,success_group1,success_group2, CItype='Two.sided')
+exact_lower <- round(exact_ci$ExactCI[1], 2)
+exact_upper <- round(exact_ci$ExactCI[2], 2)
+
+# Вывод результатов в одной строке с указанием ширины интервалов и самих значений
+cat("Asymptotic CI (95%):", asym_lower, asym_upper, "Ширина:", asym_upper - asym_lower, "\n")
+cat("Exact CI (95%)     :", exact_lower, exact_upper, "Ширина:", exact_upper - exact_lower, "\n")
+
+
+
+# Вычисление точного доверительного интервала для разницы долей (зависимые выборки)
+#install.packages('ExactCIdiff')
+
+library(ExactCIdiff)
+
+n12 = 11
+t = 9
+n21 = 0
+
+
+#n12 - количество субъектов в попарном исследовании, которые достигли успеха от лечения и неудачи от контроля.
+#t   - количество субъектов в попарном исследовании, которые имеют одинаковые результаты от лечения и контроля, t = n11 + n22.
+#n21 - количество субъектов в попарном исследовании, которые достигли успеха от контроля и неудачи от лечения.
+
+
+result <- PairedCI(n12, t, n21, CItype = 'Two.sided')
+cat("Exact Paired CI (95%):", round(result$ExactCI[1], 2), round(result$ExactCI[2], 2), ", Ширина:", round(result$ExactCI[2] - result$ExactCI[1], 2), "\n")
+
 
 ```
+
+
+
+## Точность ДИ
+
+```{r, warning=FALSE}
+
+
+
+# Устанавливаем необходимые пакеты
+# install.packages("ExactCIdiff")
+library(ExactCIdiff)
+# Задаем параметры генеральной совокупности
+true_p1 <- 0.1
+true_p2 <- 0.2
+true <- true_p1 - true_p2
+sample_size <- 10  # Размер выборки
+n_simulations <- 100  # Количество симуляций
+
+# Инициализируем счетчики для оценки, сколько раз ДИ поймали истинное значение
+asymptotic_hits <- 0
+exact_hits <- 0
+
+# Симулируем множество выборок и оцениваем ДИ
+for (i in 1:n_simulations) {
+  # Создаем случайные выборки с заданными параметрами
+  sample1 <- rbinom(sample_size, size = 1, prob = true_p1)
+  sample2 <- rbinom(sample_size, size = 1, prob = true_p2)
+  
+  # Вычисляем оценки долей
+  success_group1 <- sum(sample1)
+  total_group1 <- sample_size
+  success_group2 <- sum(sample2)
+  total_group2 <- sample_size
+  
+  # Вычисляем асимптотический ДИ
+  asym_ci <- prop.test(x = c(success_group1, success_group2), n = c(total_group1, total_group2))
+  
+  # Вычисляем точный ДИ
+  exact_ci <- BinomCI(total_group1, total_group2, success_group1, success_group2, CItype = "Two.sided")
+  
+  
+  # Проверяем, ловят ли ДИ истинное значение
+  if (true >= asym_ci$conf.int[1] && true <= asym_ci$conf.int[2]) {
+    asymptotic_hits <- asymptotic_hits + 1
+  }
+  if (true >= exact_ci$ExactCI[1] && true <= exact_ci$ExactCI[2]) {
+    exact_hits <- exact_hits + 1
+  }
+}
+
+# Оцениваем, сколько раз ДИ поймали истинное значение
+cat("Asymptotic CI Hit Rate:", asymptotic_hits / n_simulations, "\n")
+cat("Exact CI Hit Rate:", exact_hits / n_simulations, "\n")
+
+
+
+
+```
+
 
 
 # Односторонние доверительные интервалы (исследования неменьшей эффективности или превосходства)
 
 ```{r}
+
 
 sample_size <- 100 # Количество пациентов, прошедших, терапию
 
@@ -1387,184 +1535,32 @@ Hg_change <- rnorm(sample_size,
 result <- t.test(Hg_change, 
                  conf.level = 0.95)
 
-print('Двусторонний ДИ:')
-print(result)
+cat('Двусторонний ДИ::', result$conf.int, "\n")
 
 result <- t.test(Hg_change, 
                  conf.level = 0.95, 
                  alternative = 'greater')
-print('Односторонний ДИ:')
-print(result)
+cat('Односторонний ДИ:', result$conf.int, "\n")
+
 
 # Попробуйте правосторонний ДИ:
 
 result <- t.test(Hg_change, 
                  conf.level = 0.95, 
                  alternative = 'less')
-print('Односторонний ДИ:')
-print(result)
+cat('Односторонний ДИ:', result$conf.int, "\n")
 
 
 ```
 
 
 
-```{r}
-
-# Install and load the necessary libraries if not already installed
-# install.packages("shiny")
-# install.packages("ggplot2")
-library(shiny)
-library(ggplot2)
-
-# Define the UI for the Shiny app
-ui <- fluidPage(
-  titlePanel("Interactive Normal Distribution Density Plot and CDF with Confidence Intervals"),
-  
-  sidebarLayout(
-    sidebarPanel(
-      sliderInput("mean", "Mean:", min = -5, max = 5, value = 0, step = 0.1),
-      sliderInput("sd", "Standard Deviation:", min = 0.1, max = 3, value = 1, step = 0.1),
-      numericInput("quantile_lower", "Lower Quantile:", min = 0, max = 1, value = 0.025, step = 0.001),
-      numericInput("quantile_upper", "Upper Quantile:", min = 0, max = 1, value = 0.975, step = 0.001),
-      numericInput("x_value", "Calculate PDF/CDF at X:", min = -10, max = 10, value = 0, step = 0.1),
-      textOutput("quantile_difference"),
-      textOutput("pdf_value"),
-      textOutput("cdf_value")
-    ),
-    
-    mainPanel(
-      plotOutput("densityPlot")
-    )
-  )
-)
-
-# Define a function to calculate ideal PDF values
-calculateIdealPDF <- function(x, mean, sd) {
-  pdf_values <- dnorm(x, mean = mean, sd = sd)
-  return(pdf_values)
-}
-
-# Define the server logic for the Shiny app
-server <- function(input, output) {
-  
-  # Create a reactive expression for calculating pdf_values
-  pdf_values <- reactive({
-    # Generate a range of x-values
-    x_range <- seq(-10, 10, by = 0.1)
-    
-    # Calculate ideal PDF values using the function
-    pdf_values <- calculateIdealPDF(x_range, input$mean, input$sd)
-    return(pdf_values)
-  })
-  
-  
-  
-  output$densityPlot <- renderPlot({
-    # Generate a larger sample of data for smoother plot
-    #data <- rnorm(100000, mean = input$mean, sd = input$sd)
-    #x_range <- seq(-10, 10, by = 0.1)
-    
-    pdf_values_data <- pdf_values()
-    
-    
-    #browser()
-    # Calculate quantile values
-    quant_lower <- quantile(pdf_values_data, input$quantile_lower)
-    quant_upper <- quantile(pdf_values_data, input$quantile_upper)
-    
-    # Create a density plot with customized text size and font
-    plot <- ggplot(data.frame(x = seq(-10, 10, by = 0.1), y = pdf_values_data), aes(x = x, y = pdf)) +
-      geom_density(fill = "blue", color = "black", alpha = 0.5) +
-      geom_vline(xintercept = quant_lower, linetype = "dashed", color = "red") +
-      geom_vline(xintercept = quant_upper, linetype = "dashed", color = "green") 
-      geom_vline(xintercept = input$x_value, linetype = "dotted", color = "purple") +  # Add vertical line for X
-      geom_text(
-        aes(x = input$x_value, y = 0.2),
-        label = paste("X =", input$x_value),
-        hjust = -0.2,
-        size = 4
-      ) +
-      labs(
-        title = "Smoothed Density Plot of Normal Distribution",
-        x = "Value",
-        y = "Density",
-        caption = paste(
-          "Lower Quantile:", round(quant_lower, 2),
-          "\nUpper Quantile:", round(quant_upper, 2)
-        )
-      ) +
-      theme_minimal() +  # You can change the theme if you prefer
-      theme(
-        text = element_text(size = 16),  # Adjust text size as needed
-        plot.title = element_text(size = 20, face = "bold"),  # Title font size and style
-        axis.title = element_text(size = 18),  # Axis labels font size
-        axis.text = element_text(size = 14)  # Tick labels font size
-      )
-
-    # Calculate the PDF value at the specified x value
-    pdf_value <- dnorm(input$x_value, mean = input$mean, sd = input$sd)
-    
-    # Calculate the CDF value at the specified x value
-    cdf_value <- pnorm(input$x_value, mean = input$mean, sd = input$sd)
-    
-    # Print the PDF and CDF values
-    print(plot)
-    print(paste("PDF at X:", round(pdf_value, 4)))
-    print(paste("CDF at X:", round(cdf_value, 4)))
-  })
-  
-  output$quantile_difference <- renderText({
-    # Calculate the difference between upper and lower quantiles
-    diff_quantiles <- input$quantile_upper - input$quantile_lower
-    paste("Quantile Difference:", round(diff_quantiles, 2))
-  })
-  
-  output$pdf_value <- renderText({
-    # Calculate the PDF value at the specified x value
-    pdf_value <- dnorm(input$x_value, mean = input$mean, sd = input$sd)
-    paste("PDF at X:", round(pdf_value, 4))
-  })
-  
-  output$cdf_value <- renderText({
-    # Calculate the CDF value at the specified x value
-    cdf_value <- pnorm(input$x_value, mean = input$mean, sd = input$sd)
-    paste("CDF at X:", round(cdf_value, 4))
-  })
-}
-
-# Run the Shiny app
-shinyApp(ui, server)
-
-```
-
-
-
-# Доверительный интервал для OR (отношение шансов)
-# https://search.r-project.org/CRAN/refmans/epitools/html/oddsratio.html
-
-
-```{r}
-
-library(epitools)
-
-tapw <- c("Lowest", "Highest")
-outc <- c("Case", "Control")	
-dat <- matrix(c(2, 35, 64, 12),2,2,byrow=TRUE)
-dimnames(dat) <- list("Tap water exposure" = tapw, "Outcome" = outc)
-oddsratio(dat, rev="c")       # 82.43028 21.28935 595.7773
-oddsratio.midp(dat, rev="r")  # 82.43028 21.28935 595.7773
-oddsratio.fisher(dat, rev="r")# 87.66286 18.69007 865.8814
-oddsratio.wald(dat, rev="r")  # 93.33333 19.75797 440.891
-oddsratio.small(dat, rev="r") # 57.4359 17.74042 302.6301
-
-```
-
+# Доверительный интервал для OR (отношение шансов) https://search.r-project.org/CRAN/refmans/epitools/html/oddsratio.html
 
 
 ```{r, warning=FALSE}
 
-
+library(epitools)
 
 # Создайте 2x2 таблицу данных для анализа
 # Замените эти значения своими собственными данными
@@ -1637,10 +1633,10 @@ cat("ширина Доверительного интервала (коррек�
 ```{r}
 
 # Define the values from your contingency table
-a <- 30  # Number of observations in Group 1 with Outcome 1
-b <- 20  # Number of observations in Group 2 with Outcome 1
-c <- 10  # Number of observations in Group 1 with Outcome 2
-d <- 40  # Number of observations in Group 2 with Outcome 2
+a <- 9  # Number of observations in Group 1 with Outcome 1
+b <- 1  # Number of observations in Group 2 with Outcome 1
+c <- 1  # Number of observations in Group 1 with Outcome 2
+d <- 9  # Number of observations in Group 2 with Outcome 2
 
 # Calculate the odds ratio (OR)
 OR <- (a / c) / (b / d)
@@ -1672,10 +1668,11 @@ cat("Confidence Interval (95%) for OR:", OR_CI[1], "to", OR_CI[2], "\n")
 ```{r}
 
 # Define the values from your contingency table
-a <- 30  # Number of observations in Group 1 with Outcome 1
-b <- 20  # Number of observations in Group 2 with Outcome 1
-c <- 10  # Number of observations in Group 1 with Outcome 2
-d <- 40  # Number of observations in Group 2 with Outcome 2
+a <- 9  # Number of observations in Group 1 with Outcome 1
+b <- 1  # Number of observations in Group 2 with Outcome 1
+c <- 1  # Number of observations in Group 1 with Outcome 2
+d <- 9  # Number of observations in Group 2 with Outcome 2
+
 
 # Create a 2x2 contingency table
 contingency_table <- matrix(c(a, b, c, d), nrow = 2)
@@ -1695,203 +1692,6 @@ cat("Exact Confidence Interval for OR:", OR_CI[1], "to", OR_CI[2], "\n")
 
 
 ```
-
-
-```{r}
-
-# Load the boot package
-library(boot)
-
-# Define your data
-a <- 30  # Number of observations in Group 1 with Outcome 1
-b <- 20  # Number of observations in Group 2 with Outcome 1
-c <- 10  # Number of observations in Group 1 with Outcome 2
-d <- 40  # Number of observations in Group 2 with Outcome 2
-
-# Define a function to calculate the OR
-calculate_OR <- function(data, indices) {
-  sampled_data <- data[indices, ]
-  a <- sum(sampled_data$Outcome == "Outcome1" & sampled_data$Group == "Group1")
-  b <- sum(sampled_data$Outcome == "Outcome1" & sampled_data$Group == "Group2")
-  c <- sum(sampled_data$Outcome == "Outcome2" & sampled_data$Group == "Group1")
-  d <- sum(sampled_data$Outcome == "Outcome2" & sampled_data$Group == "Group2")
-  
-  OR <- (a / c) / (b / d)
-  return(OR)
-}
-
-
-
-# Create a data frame with your data
-data <- data.frame(
-  Group = c(rep("Group1", a + c), rep("Group2", b + d)),
-  Outcome = c(rep("Outcome1", a), rep("Outcome2", c), rep("Outcome1", b), rep("Outcome2", d))
-)
-
-# Set the number of bootstrap samples
-n_bootstrap_samples <- 1000
-
-# Perform bootstrapping to calculate the CI for OR
-boot_results <- boot(data, statistic = calculate_OR, R = n_bootstrap_samples)
-
-# Calculate the CI
-OR_CI <- boot.ci(boot_results, type = "bca")
-
-# Print the results
-print(OR_CI)
-
-
-```
-
-
-```{r}
-
-# Load necessary libraries
-library(boot)
-
-
-# Define a function to calculate asymptotic CI for OR
-calculate_asymptotic_CI <- function(data, confidence_level) {
-  # Implement the calculation of asymptotic CI for OR
-  # Replace the following lines with your actual code
-  OR <- calculate_OR(data)  # Calculate OR using your method
-  SE <- calculate_SE(data)  # Calculate standard error of ln(OR)
-  z <- qnorm(1 - (1 - confidence_level) / 2)
-  lower_limit <- log(OR) - z * SE
-  upper_limit <- log(OR) + z * SE
-  return(c(exp(lower_limit), exp(upper_limit)))  # Return CI as a numeric vector
-}
-
-calculate_asymptotic_CI(simulated_data, confidence_level)
-
-
-# Define a function to calculate exact CI for OR
-calculate_exact_CI <- function(data, confidence_level) {
-  # Implement the calculation of exact CI for OR
-  # Replace the following lines with your actual code
-  OR <- calculate_OR(data)  # Calculate OR using your method
-  # Add code to perform exact calculation of CI
-  return(c(lower_limit, upper_limit))  # Return CI as a numeric vector
-}
-
-# Define a function to calculate bootstrap CI for OR
-calculate_bootstrap_CI <- function(data, confidence_level) {
-  # Implement the calculation of bootstrap CI for OR
-  # Replace the following lines with your actual code
-  OR <- calculate_OR(data)  # Calculate OR using your method
-  # Add code to perform bootstrap calculation of CI
-  return(c(lower_limit, upper_limit))  # Return CI as a numeric vector
-}
-
-# Rest of the simulation code remains the same
-
-
-
-
-# Define a function to generate simulated data
-generate_data <- function(n, p, OR) {
-  a <- round(n * p)
-  c <- n - a
-  b <- round(a / OR)
-  d <- c - b
-  
-  # Create a 2x2 contingency table
-  contingency_table <- matrix(c(a, b, c, d), nrow = 2)
-  rownames(contingency_table) <- c("Outcome 1", "Outcome 2")
-  colnames(contingency_table) <- c("Group 1", "Group 2")
-  
-  return(contingency_table)
-}
-
-# Set simulation parameters
-n_simulations <- 1000  # Number of simulations
-n_samples <- 100       # Sample size in each simulation
-true_OR <- 2           # True odds ratio to simulate
-confidence_level <- 0.95
-
-# Initialize storage for results
-results <- data.frame(Method = character(n_simulations), 
-                       Coverage = numeric(n_simulations))
-
-# Run simulations
-for (i in 1:n_simulations) {
-  # Generate simulated data
-  simulated_data <- generate_data(n_samples, 0.5, true_OR)
-  
-  # Calculate CIs using different methods
-  asymptotic_CI <- calculate_asymptotic_CI(simulated_data, confidence_level)
-  exact_CI <- calculate_exact_CI(simulated_data, confidence_level)
-  bootstrap_CI <- calculate_bootstrap_CI(simulated_data, confidence_level)
-  
-  # Determine which method provided the true OR within the CI
-  asymptotic_coverage <- (asymptotic_CI[1] <= true_OR) & (true_OR <= asymptotic_CI[2])
-  exact_coverage <- (exact_CI[1] <= true_OR) & (true_OR <= exact_CI[2])
-  bootstrap_coverage <- (bootstrap_CI[1] <= true_OR) & (true_OR <= bootstrap_CI[2])
-  
-  # Store results
-  if (asymptotic_coverage) {
-    results[i, ] <- c("Asymptotic", 1)
-  } else if (exact_coverage) {
-    results[i, ] <- c("Exact", 1)
-  } else if (bootstrap_coverage) {
-    results[i, ] <- c("Bootstrap", 1)
-  } else {
-    results[i, ] <- c("None", 0)
-  }
-}
-
-# Calculate coverage probabilities
-coverage_probabilities <- table(results$Method) / n_simulations
-
-# Print coverage probabilities
-print(coverage_probabilities)
-
-
-```
-
-
-
-```{r}
-
-calculate_asymptotic_CI <- function(contingency_table, confidence_level = 0.95) {
-  # Calculate the odds ratio (OR) from the contingency table
-  a <- contingency_table[1, 1]
-  b <- contingency_table[1, 2]
-  c <- contingency_table[2, 1]
-  d <- contingency_table[2, 2]
-  
-  OR <- (a * d) / (b * c)
-  
-  # Calculate the standard error (SE) of the log(OR)
-  SE_log_OR <- sqrt((1/a) + (1/b) + (1/c) + (1/d))
-  
-  # Calculate the z-score for the specified confidence level
-  z <- qnorm(1 - (1 - confidence_level) / 2)
-  
-  # Calculate the lower and upper limits of the asymptotic CI
-  lower_limit <- log(OR) - z * SE_log_OR
-  upper_limit <- log(OR) + z * SE_log_OR
-  
-  # Transform the limits back to the OR scale
-  asymptotic_CI <- exp(c(lower_limit, upper_limit))
-  
-  return(asymptotic_CI)
-}
-
-# Example usage:
-# Create a 2x2 contingency table
-contingency_table <- matrix(c(30, 20, 10, 40), nrow = 2)
-rownames(contingency_table) <- c("Outcome 1", "Outcome 2")
-colnames(contingency_table) <- c("Group 1", "Group 2")
-
-# Calculate asymptotic CI for OR with a 95% confidence level
-asymptotic_CI <- calculate_asymptotic_CI(contingency_table)
-print(asymptotic_CI)
-
-
-```
-
-
 
 
 
