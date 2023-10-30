@@ -955,6 +955,18 @@ cat("Точный доверительный интервал (неизвест�
 
 ```{r}
 
+# mean1 = 20
+# 
+# n1 = 10
+# 
+# mean2 = 20
+# n2 = 10
+# 
+# sd = 3
+# 
+# 
+# data1 <- rexp(n1, rate = 1/mean1)
+# data2 <- rexp(n2, rate = 1/mean2)
 
 # Формируем 2 ВЫБОРКИ
 x <- data1
@@ -1041,8 +1053,8 @@ set.seed(123)
 mean1 <- 20
 sd <- 3
 mean2 <- 20
-n1 <- 30
-n2 <- 30
+n1 <- 3
+n2 <- 3
 
 # Уровень доверия
 confidence_level <- 0.95
@@ -1254,7 +1266,7 @@ for (i in 1:1000) {
   left_w <- t_result$conf.int[1]
   right_w <- t_result$conf.int[2]
   
-  if (left_w <= 0 && right_w >= 0) {
+  if (left_w <= 0 || right_w >= 0) {
     approximate_welch_captured <- approximate_welch_captured + 1
   }
 }
@@ -1264,6 +1276,71 @@ cat("Асимптотический ДИ - доля 'попаданий' ист�
 cat("Точный ДИ с известной дисперсией - доля 'попаданий' истинной разницы               :", exact_known_variance_captured / 1000, "\n")
 cat("Точный ДИ с неизвестной дисперсией - доля 'попаданий' истинной разницы             :", exact_unknown_variance_captured / 1000, "\n")
 cat("Примерный ДИ (Дисперсии не извеcтны и не равны) - доля 'попаданий' истинной разницы:", approximate_welch_captured / 1000, "\n")
+
+
+
+# similar principles apply when comparing confidence intervals for the difference in means versus confidence intervals for an individual mean. Here's how they compare:
+# 
+# Increased Variability: The difference in means has more variability compared to the mean of a single sample. When you calculate the difference, you're essentially combining the variability from both groups, which can result in a wider confidence interval.
+# 
+# Covariance: If you're calculating the difference in means for two groups, the covariance between the two groups can affect the width of the confidence interval. If the two groups are positively correlated, the confidence interval may be narrower. If they are negatively correlated, it may be wider.
+# 
+# Degrees of Freedom: The number of degrees of freedom in the calculation of a confidence interval for the difference in means is usually lower than when estimating a single mean. This is because you're estimating two means (from two samples) and possibly the variance of each group. Lower degrees of freedom result in wider confidence intervals.
+# 
+# Statistical Precision: When calculating a confidence interval for the difference in means, you're estimating the difference between two parameters. This generally results in less precise estimates compared to estimating a single mean, which leads to wider confidence intervals.
+# 
+# So, just like with proportions, you can expect that the confidence interval for the difference in means will be wider than the confidence interval for a single mean, primarily due to the increased variability, considerations related to covariance, and the impact of degrees of freedom. These principles are consistent with the statistical methodology used to estimate these intervals.
+
+
+
+#set.seed(123)
+
+num_simulations <- 1000
+n1 <- 3
+n2 <- 3
+true_mean1 <- 20
+true_mean2 <- 20
+true_diff <- true_mean1 - true_mean2
+
+sd=3
+
+alpha <- 0.05
+
+asymptotic_error_count <- 0
+approximate_welch_error_count <- 0
+
+for (i in 1:num_simulations) {
+  data1 <- rexp(n1, rate = 1/true_mean1)
+  data2 <- rexp(n2, rate = 1/true_mean2)
+  
+  data1 <- rnorm(n1, mean = true_mean1, sd = sd)
+  data2 <- rnorm(n2, mean = true_mean2, sd = sd)
+  
+  # Asymptotic estimation
+  t_result_asymptotic <- t.test(data1, data2, conf.level = 0.95, var.equal = TRUE)
+  conf_int_asymptotic <- t_result_asymptotic$conf.int
+  
+  # Approximate Welch's method
+  t_result_welch <- t.test(data1, data2, conf.level = 0.95, var.equal = FALSE)
+  conf_int_welch <- t_result_welch$conf.int
+  
+  # Check if asymptotic estimation contains the true mean
+  if (conf_int_asymptotic[1] < true_diff && conf_int_asymptotic[2] >= true_diff) {
+    asymptotic_error_count <- asymptotic_error_count + 1
+  }
+  
+  # Check if approximate Welch's method contains the true mean
+  if (conf_int_welch[1] < true_diff && conf_int_welch[2] > true_diff) {
+    approximate_welch_error_count <- approximate_welch_error_count + 1
+  }
+}
+
+asymptotic_error_rate <- asymptotic_error_count / num_simulations
+approximate_welch_error_rate <- approximate_welch_error_count / num_simulations
+
+cat("Частота ошибок для асимптотической оценки:", asymptotic_error_rate, "\n")
+cat("Частота ошибок для примерного метода Уэлча:", approximate_welch_error_rate, "\n")
+
 
 
 
@@ -1348,37 +1425,70 @@ cat("Точный ДИ (Метод Клоппера-Пирсона) для до�
 # Воспроизведение данных
 set.seed(123)
 
+# waldInterval <- function(x, n, conf.level = 0.95){
+#  p <- x/n
+#  sd <- sqrt(p*((1-p)/n))
+#  z <-  qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) #returns the value of thresholds at which conf.level has to be cut at. for 95% CI, this is -1.96 and +1.96
+#  ci <- p + z*sd
+#  return(ci)
+#  }
+# #example
+# #waldInterval(x = 20, n =100) #this will return 0.345 and 0.655
+# 
+# 
+# numSamples <- 100                #number of samples to be drawn from population
+# numTrials <- 1000                #this is the sample size (size of each sample)
+# probs <- seq(0.001, 0.999, 0.001) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+# coverage <- as.numeric()         #initializing an empty vector to store coverage for each of the probs defined above
+# for (i in 1:length(probs)) {
+#  x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+#  isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+#  #since we have n different x here, we will have n different ci for #each of them. 
+#  for (j in 1:numSamples) {
+#  ci <- waldInterval(x = x[j], n = numTrials)
+#  isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+#  }
+#  coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+# }
+# 
+# 
+# plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Wald Interval',
+#  xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
+# abline(h = 95, lty=3, col='maroon', lwd=2)
+# axis(side = 2, at=seq(75,100, 5))
+
+
+
 waldInterval <- function(x, n, conf.level = 0.95){
- p <- x/n
- sd <- sqrt(p*((1-p)/n))
- z <-  qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) #returns the value of thresholds at which conf.level has to be cut at. for 95% CI, this is -1.96 and +1.96
- ci <- p + z*sd
- return(ci)
- }
-#example
-#waldInterval(x = 20, n =100) #this will return 0.345 and 0.655
-
-
-numSamples <- 100               #number of samples to be drawn from population
-numTrials <- 1000                #this is the sample size (size of each sample)
-probs <- seq(0.001, 0.999, 0.001) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
-coverage <- as.numeric()         #initializing an empty vector to store coverage for each of the probs defined above
-for (i in 1:length(probs)) {
- x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
- isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
- #since we have n different x here, we will have n different ci for #each of them. 
- for (j in 1:numSamples) {
- ci <- waldInterval(x = x[j], n = numTrials)
- isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
- }
- coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+  p <- x/n
+  sd <- sqrt(p*((1-p)/n))
+  z <-  qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) # возвращает значения порогов, для соответствующего уровня доверия. Для 95% доверительного интервала это -1.96 и +1.96.
+  ci <- p + z*sd
+  return(ci)
 }
 
+numSamples <- 1000                # количество выборок для извлечения из популяции
+numTrials <- 100                   # размер выборки (размер каждой выборки)
+probs <- seq(0.1, 0.9, 0.1) # истинные пропорции в популяции. Для каждого значения в этом массиве будут построены 95% доверительные интервалы
+coverage <- as.numeric()          # инициализация пустого вектора для сохранения вероятности покрытия для каждой из заданных пропорций
 
-plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Wald Interval',
- xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
+for (i in 1:length(probs)) {
+  x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) # взятие n случайных выборок и получение числа успешных исходов в каждой из n выборок. Таким образом, x здесь будет иметь длину n.
+  isCovered <- as.numeric() # вектор для обозначения, покрывается ли истинная пропорция популяции (probs[i]) в построенном интервале
+  # так как у нас есть n различных x здесь, у нас будет n разных интервалов для каждого из них.
+  
+  for (j in 1:numSamples) {
+    ci <- waldInterval(x = x[j], n = numTrials)
+    isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) # если истинная пропорция (probs[i]) покрывается в построенном доверительном интервале, то возвращается 1, иначе 0
+  }
+  
+  coverage[i] <- mean(isCovered)*100 # сохранение вероятности покрытия для каждой из истинных пропорций. Идеально для 95% доверительного интервала это должно быть ближе к 95%
+}
+
+plot(probs, coverage, type='l', ylim = c(60,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Вероятность покрытия истинной пропорции (интервал Уальда)',
+     xlab = 'Истинная пропорция (пропорция в популяции)', ylab = 'Вероятность покрытия (%) для 95% ДИ')
 abline(h = 95, lty=3, col='maroon', lwd=2)
-axis(side = 2, at=seq(75,100, 5))
+axis(side = 2, at=seq(60,100, 5))
 
 
 ```
@@ -1391,24 +1501,58 @@ axis(side = 2, at=seq(75,100, 5))
 # Воспроизведение данных
 set.seed(123)
 
-numSamples <- 100 #number of samples to be drawn from population
-numTrials <- 1000 #this is the sample size (size of each sample)
-probs <- seq(0.001, 0.999, 0.001) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
-coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+# numSamples <- 100 #number of samples to be drawn from population
+# numTrials <- 1000 #this is the sample size (size of each sample)
+# probs <- seq(0.001, 0.999, 0.001) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+# coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+# for (i in 1:length(probs)) {
+#  x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+#  isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+#  #since we have n different x here, we will have n different ci for #each of them. 
+#  for (j in 1:numSamples) {
+#  ci <- binom.test(x = x[j], n = numTrials)$conf
+#  isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+#  }
+#  coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+# }
+# plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Clopper — Pearson',
+#  xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
+# abline(h = 95, lty=3, col='maroon', lwd=2)
+# axis(side = 2, at=seq(75,100, 5))
+
+
+numSamples <- 1000 # количество выборок, которые будут взяты из популяции
+numTrials <- 100 # это размер каждой выборки
+
+probs <- seq(0.1, 0.9, 0.1) # истинные пропорции в популяции. Для каждого значения в этом массиве мы построим 95% доверительные интервалы
+
+coverage <- as.numeric() # инициализация пустого вектора для сохранения вероятности покрытия для каждой из пропорций, заданных выше
+
 for (i in 1:length(probs)) {
- x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
- isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
- #since we have n different x here, we will have n different ci for #each of them. 
- for (j in 1:numSamples) {
- ci <- binom.test(x = x[j], n = numTrials)$conf
- isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
- }
- coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+  x <- rbinom(n = numSamples, size = numTrials, prob = probs[i]) # взятие n случайных выборок и получение числа успешных исходов в каждой из n выборок. Таким образом, x здесь будет иметь длину n.
+
+  isCovered <- as.numeric() # булев вектор для обозначения, покрывается ли истинная пропорция в популяции (probs[i]) в построенных доверительных интервалах
+
+  # так как у нас есть n различных x здесь, у нас будет n разных доверительных интервалов для каждого из них.
+
+  for (j in 1:numSamples) {
+    ci <- binom.test(x = x[j], n = numTrials)$conf # вычисление доверительного интервала Clopper–Pearson для каждой выборки и извлечение из него доверительного интервала
+
+    isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) # если истинная пропорция (probs[i]) покрывается в построенном доверительном интервале, то возвращается 1, иначе 0
+  }
+
+  coverage[i] <- mean(isCovered) * 100 # запись вероятности покрытия для каждой из истинных пропорций. Идеально для 95% доверительного интервала это должно быть ближе к 95%
 }
-plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Clopper — Pearson',
- xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
-abline(h = 95, lty=3, col='maroon', lwd=2)
-axis(side = 2, at=seq(75,100, 5))
+
+plot(probs, coverage, type = 'l', ylim = c(75, 100), col = 'blue', lwd = 2, frame.plot = FALSE, yaxt = 'n', main = 'Вероятность покрытия истинной пропорции (интервал Clopper–Pearson)',
+     xlab = 'Истинная пропорция (пропорция в популяции)', ylab = 'Вероятность покрытия (%) для 95% ДИ')
+
+abline(h = 95, lty = 3, col = 'maroon', lwd = 2) # добавление горизонтальной пунктирной линии на уровне 95% для сравнения
+
+axis(side = 2, at = seq(75, 100, 5)) # добавление оси координат на график
+
+
+
 
 
 
@@ -1423,11 +1567,13 @@ axis(side = 2, at=seq(75,100, 5))
 # Воспроизведение данных
 # set.seed(123)
 
+library(binom)
+
 # Истинное значение доли
-true_p <- 0.2
+true_p <- 0.5
 
 # Размер выборки и количество повторений симуляции
-n <- 100
+n <- 10
 num_simulations <- 1000
 
 # Инициализация счетчиков для подсчета успешных симуляций
@@ -1536,11 +1682,11 @@ library(ExactCIdiff)
 
 
 # Задаем параметры генеральной совокупности
-true_p1 <- 0.5
-true_p2 <- 0.5
+true_p1 <- 0.1
+true_p2 <- 0.1
 true_p <- true_p1 - true_p2
 
-sample_size <- 100  # Размер выборки
+sample_size <- 10 # Размер выборки
 n_simulations <- 1000  # Количество симуляций
 
 # Инициализируем счетчики для оценки, сколько раз ДИ поймали истинное значение
@@ -1564,24 +1710,38 @@ for (i in 1:n_simulations) {
   total_group2 <- sample_size
   
   # Вычисляем асимптотический ДИ
-  asym_ci <- prop.test(x = c(success_group1, success_group2), n = c(total_group1, total_group2), alternative = "two.sided")
-  
-  # Вычисляем точный ДИ
-  # exact_ci <- BinomCI(total_group1, total_group2, success_group1, success_group2, CItype = "Two.sided")
+  asym_ci <- prop.test(x = c(success_group1, success_group2), n = c(total_group1, total_group2), alternative = "two.sided", -# Вычисляем точный ДИ
+  exact_ci <- BinomCI(total_group1, total_group2, success_group1, success_group2, CItype = "Two.sided")
   
   
   # Проверяем, ловят ли ДИ истинное значение
   if (true_p >= asym_ci$conf.int[1] && true_p <= asym_ci$conf.int[2]) {
     asymptotic_hits <- asymptotic_hits + 1
   }
-  #if (true_p >= exact_ci$ExactCI[1] && true_p <= exact_ci$ExactCI[2]) {
-  #  exact_hits <- exact_hits + 1
-  #}
+  if (true_p >= exact_ci$ExactCI[1] && true_p <= exact_ci$ExactCI[2]) {
+    exact_hits <- exact_hits + 1
+  }
 }
 
 # Оцениваем, сколько раз ДИ поймали истинное значение
-cat("Asymptotic CI Hit Rate:", asymptotic_hits / n_simulations, "\n")
-#cat("Exact CI Hit Rate     :", exact_hits / n_simulations, "\n")
+cat("Aсимптотический ДИ:", asymptotic_hits / n_simulations, "\n")
+cat("Точный ДИ          :", exact_hits / n_simulations, "\n")
+
+
+# The width of a confidence interval (CI) for the difference between two proportions is often larger than the width of a CI for a single proportion. This is due to the fact that when you calculate a CI for the difference between two proportions, you are essentially propagating the uncertainty from both proportions into the estimate of their difference.
+# 
+# Here's why the CI for the difference is generally wider:
+# 
+# Increased Variability: The difference between two proportions is more variable than an individual proportion. When you calculate the difference, you are subtracting one value from another, which can magnify the variability.
+# 
+# Covariance: The CI for the difference takes into account the covariance between the two proportions. If there is a negative correlation between the two proportions, the CI will be wider because the two proportions tend to move in opposite directions. If there is a positive correlation, the CI may be narrower.
+# 
+# Degrees of Freedom: When calculating CIs for individual proportions, you have more degrees of freedom because you are estimating one parameter. In contrast, when calculating the CI for the difference, you are estimating two parameters, which leads to fewer degrees of freedom, resulting in a wider CI.
+# 
+# Statistical Precision: When calculating a CI for an individual proportion, you are estimating a single parameter, and the CI reflects the precision of that estimate. When calculating the difference, you are estimating two parameters, which can lead to less precise estimates and wider CIs.
+# 
+# In summary, it's normal for the CI for the difference between proportions to be wider than the CI for a single proportion due to the increased variability and considerations related to the covariance between the proportions. This is a characteristic of the statistical methodology used to estimate these intervals.
+
 
 ```
 
