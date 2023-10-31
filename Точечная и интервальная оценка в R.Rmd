@@ -9,7 +9,16 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
+library(ggplot2)
 
+#install.packages("BSDA")
+library(BSDA)
+#install.packages("binom")
+library(binom)
+#install.packages('ExactCIdiff')
+library(ExactCIdiff)
+#install.packages('epitools')
+library(epitools)
 
 ```
 
@@ -1710,7 +1719,7 @@ for (i in 1:n_simulations) {
   total_group2 <- sample_size
   
   # Вычисляем асимптотический ДИ
-  asym_ci <- prop.test(x = c(success_group1, success_group2), n = c(total_group1, total_group2), alternative = "two.sided", -# Вычисляем точный ДИ
+  asym_ci <- prop.test(x = c(success_group1, success_group2), n = c(total_group1, total_group2), alternative = "two.sided") # Вычисляем точный ДИ
   exact_ci <- BinomCI(total_group1, total_group2, success_group1, success_group2, CItype = "Two.sided")
   
   

@@ -1,0 +1,265 @@
+---
+title: "Point and interval estimations"
+author: "Evgeny Bakin"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+```
+
+# Точечное оценивание
+
+## Пример: средний уровень биомаркера
+
+Параметры эксперимента
+
+```{r pe_10}
+# Истинный средний уровень в генеральной совокупности:
+m = 130
+
+# Количество животных в выборке
+n = 10
+
+```
+
+Как выглядит выборка?
+```{r pe_11}
+s <- round(rnorm(n,m,3),1)
+
+plot(seq(m-3*3,m+3*3,0.01), dnorm(seq(m-3*3,m+3*3,0.01),m,3))
+
+print(s)
+```
+Сделаем точечную оценку средего значения биомаркера:
+
+```{r pe_12, fig.width=8, fig.height=6}
+m_est <- mean(s)
+
+est_out <- paste0('Средний уровень биомаркера В ВЫБОРКЕ равен: ', round(m_est,3),  
+                  '\nОшибка в оценке равна: ', round(m_est-m,3))
+
+df <- data.frame(`Оценка среднего значения биомаркера` = m_est, check.names = FALSE)
+
+plt <- ggplot(df, aes(x = `Оценка среднего значения биомаркера`, y = 0)) +
+  geom_point() +
+  scale_x_continuous(limits = c(120, 140)) +
+  geom_vline(xintercept=m, linetype="dashed", color = "red") +
+  theme_bw()
+
+cat(est_out)
+plt
+
+```
+Повторим эксперимент автоматически 30 раз.
+
+```{r pe_13, echo=FALSE, fig.width=8, fig.height=6}
+n = 10
+
+m_est_30 <- sapply(1:30, function(k){
+  s <- round(rnorm(n,m,3),1)
+  mean(s)
+})
+
+df <- data.frame(`Оценка среднего значения биомаркера` = m_est_30, 
+                 `Номер эксперимента` = 1:30, check.names = FALSE)
+
+plt <- ggplot(df, aes(x = `Оценка среднего значения биомаркера`, 
+                      y = `Номер эксперимента`)) +
+  geom_point() +
+  scale_x_continuous(limits = c(120, 140)) +
+  scale_y_continuous(breaks = 1:30) +
+  geom_vline(xintercept=m, linetype="dashed", color = "red") +
+  theme_bw()
+
+plt
+
+print( sqrt(mean((df$`Оценка среднего значения биомаркера`-130)^2)) )
+```
+Поэкспериментируем с объемом выборки и стандартным отклонением!
+
+```{r pe_14, echo=FALSE, fig.width=8, fig.height=6}
+n = 40
+
+m_est_30 <- sapply(1:30, function(k){
+  s <- round(rnorm(n,m,12),1)
+  mean(s)
+})
+
+df <- data.frame(`Оценка среднего значения биомаркера` = m_est_30, 
+                 `Номер эксперимента` = 1:30, check.names = FALSE)
+
+plt <- ggplot(df, aes(x = `Оценка среднего значения биомаркера`, 
+                      y = `Номер эксперимента`)) +
+  geom_point() +
+  scale_x_continuous(limits = c(120, 140)) +
+  scale_y_continuous(breaks = 1:30) +
+  geom_vline(xintercept=m, linetype="dashed", color = "red") +
+  theme_bw()
+
+plt
+
+print( sqrt(mean((df$`Оценка среднего значения биомаркера`-130)^2)) )
+
+```
+
+Посмотрим на распределение оценки.
+
+```{r pe_14, echo=FALSE, fig.width=6, fig.height=5}
+n = 40
+
+m_est_1000 <- sapply(1:1000, function(k){
+  s <- round(rnorm(n,m,12),1)
+  mean(s)
+})
+
+df <- data.frame(`Оценка среднего значения биомаркера` = m_est_1000, 
+                 `Номер эксперимента` = 1:1000, check.names = FALSE)
+
+hist(df$`Оценка среднего значения биомаркера`)
+
+```
+
+Если изначальное распределение - ненормальное
+
+```{r pe_14, echo=FALSE, fig.width=6, fig.height=5}
+
+n = 40
+
+m_est_1000 <- sapply(1:1000, function(k){
+  s <- round(runif(n,m/2,3*m/2),1)
+  mean(s)
+})
+
+plot(seq(0,2*m,0.01), dunif(seq(0,2*m,0.01),m/2,3*m/2))
+
+df <- data.frame(`Оценка среднего значения биомаркера` = m_est_1000, 
+                 `Номер эксперимента` = 1:1000, check.names = FALSE)
+
+hist(df$`Оценка среднего значения биомаркера`)
+
+```
+
+
+# Интервальная оценка
+
+```{r pe_21}
+# Количество животных в выборке
+n = 1000
+
+s <- round(rnorm(n,m,3),1)
+
+print(s)
+
+m_est <- t.test(s)$estimate
+lb <- t.test(s)$conf.int[1]
+ub <- t.test(s)$conf.int[2]
+
+df <- data.frame(`Оценка среднего значения биомаркера` = m_est, 
+                 lb = lb, ub = ub, check.names = FALSE)
+
+plot(seq(m-3*3,m+3*3,0.01), dnorm(seq(m-3*3,m+3*3,0.01),m,3))
+
+plt <- ggplot(df, aes(x = `Оценка среднего значения биомаркера`, y = 0)) +
+  geom_point() +
+  geom_errorbar(mapping = aes(xmin = lb, xmax = ub), size = 0.5, width = 0.2) +
+  scale_x_continuous(limits = c(120, 140)) +
+  scale_y_continuous(limits = c(-1, 1)) +
+  geom_vline(xintercept=m, linetype="dashed", color = "red") +
+  theme_bw()
+
+plt
+
+```
+Доверяй, но проверяй!
+
+```{r ie_22}
+# Количество животных в выборке:
+n = 3
+
+confidence_level = 0.95
+
+num_exp <- 100 
+
+df_trial <- data.frame(
+  center_ID = rep(1:num_exp, each = n),
+  patient_ID = rep(1:n, num_exp),
+  Hg_change = rnorm(n*num_exp, mean = m, sd = 3)
+)
+
+trial_results <- df_trial %>% 
+  group_by(center_ID) %>% 
+  do(broom::tidy(t.test(Hg_change ~ 1, conf.level = confidence_level, data = .))) %>% 
+  dplyr::select(estimate, conf.low, conf.high) %>% 
+  mutate(CI_width = conf.high - conf.low) %>% 
+  mutate(out = ifelse((m < conf.high) & (m > conf.low), 'ok', 'missed'))
+
+ggplot(trial_results, aes(y = center_ID)) +
+  geom_errorbar(mapping = aes(xmin = conf.low, xmax = conf.high, color = out), size = 0.5) +
+  geom_vline(xintercept=m, linetype="dashed", 
+                color = "red", size=1) +
+  scale_x_continuous(limits = c(120, 140)) +
+  theme_bw() +
+  theme(text = element_text(size = 20))  
+
+print(table(trial_results$out))
+```
+Повторим много раз
+
+```{r ie_23}
+# Количество животных в выборке:
+n = 3
+
+confidence_level = 0.95
+
+num_exp <- 1000
+
+df_trial <- data.frame(
+  center_ID = rep(1:num_exp, each = n),
+  patient_ID = rep(1:n, num_exp),
+  Hg_change = rnorm(n*num_exp, mean = m, sd = 3)
+)
+
+trial_results <- df_trial %>% 
+  group_by(center_ID) %>% 
+  do(broom::tidy(t.test(Hg_change ~ 1, conf.level = confidence_level, data = .))) %>% 
+  dplyr::select(estimate, conf.low, conf.high) %>% 
+  mutate(CI_width = conf.high - conf.low) %>% 
+  mutate(out = ifelse((m < conf.high) & (m > conf.low), 'ok', 'missed'))
+
+plot(seq(m-3*3,m+3*3,0.01), dnorm(seq(m-3*3,m+3*3,0.01),m,3))
+
+print(table(trial_results$out))
+```
+
+А если исходное распределение другое?
+
+```{r ie_23}
+# Количество животных в выборке:
+n = 3
+
+confidence_level = 0.95
+
+num_exp <- 1000
+
+df_trial <- data.frame(
+  center_ID = rep(1:num_exp, each = n),
+  patient_ID = rep(1:n, num_exp),
+  Hg_change = rexp(n*num_exp, 1/m)
+)
+
+trial_results <- df_trial %>% 
+  group_by(center_ID) %>% 
+  do(broom::tidy(t.test(Hg_change ~ 1, conf.level = confidence_level, data = .))) %>% 
+  dplyr::select(estimate, conf.low, conf.high) %>% 
+  mutate(CI_width = conf.high - conf.low) %>% 
+  mutate(out = ifelse((m < conf.high) & (m > conf.low), 'ok', 'missed'))
+
+plot(seq(0,5*m,0.01), dexp(seq(0,5*m,0.01),1/m))
+
+print(table(trial_results$out))
+```
