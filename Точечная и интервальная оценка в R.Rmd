@@ -552,43 +552,26 @@ confidence_level <- 0.95
 sample_size <- 100 # число эксперментальных животных
 num_simulations <- 1000
 
-# Функция для создания доверительного интервала
-create_confidence_interval <- function(data, confidence_level, method) {
-  sample_mean <- mean(data)
-  sample_sd <- sd(data)
-  sample_size <- length(data)
-  
-  if (method == "asymptotic") {
-    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
-    margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
-  } 
-  
-  
-  ci <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-  return(ci)
-}
 
 # Инициализируем переменную для подсчета количества "попаданий" истинного среднего 
 asymptotic_captured <- 0
-
 
 # Цикл для симуляции num_simulations раз
 for (i in 1:num_simulations) {
   data <- rnorm(sample_size, mean = mean, sd = sd)
   
-  # Рассчитываем доверительный интервал для метода
-  ci_asymptotic <- create_confidence_interval(data, confidence_level, "asymptotic")
+  # Рассчитываем доверительный интервал 
+  ci_asymptotic <- z.test(x=data, conf.level = confidence_level, sigma.x = sd(data), mu=mean)$conf.int
 
   
   # Проверяем, ловит ли доверительный интервал истинное значение среднего
   if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
     asymptotic_captured <- asymptotic_captured + 1
   }
-  
-  
 }
 
-# Выводим результаты
+
+# Выводим результат
 cat("Асимптотический ДИ - доля 'попаданий' истинного среднего    :", asymptotic_captured / num_simulations, "\n")
 
 
@@ -659,6 +642,18 @@ for (i in 1:num_simulations) {
 # Выводим результаты
 cat("Асимптотический ДИ - доля 'попаданий' истинного среднего    :", asymptotic_captured / num_simulations, "\n")
 cat("Точный ДИ (t-интервал) - доля 'попаданий' истинного среднего:", exact_t_captured / num_simulations, "\n")
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```
 
