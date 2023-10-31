@@ -263,6 +263,8 @@ lambda_exp <- 1 / mean_exp
 
 data_exponential <- rexp(10000, rate = lambda_exp)
 
+mean(data_exponential)
+
 # График экспоненциального распределения
 hist(data_exponential, breaks = 30, col = 'purple', main = 'Экспоненциальное Распределение (μ=50)', xlab = 'Значение', ylab = 'Частота')
 
@@ -560,14 +562,18 @@ asymptotic_captured <- 0
 for (i in 1:num_simulations) {
   data <- rnorm(sample_size, mean = mean, sd = sd)
   
-  # Рассчитываем доверительный интервал 
+  # Рассчитываем доверительный интервалы 
   ci_asymptotic <- z.test(x=data, conf.level = confidence_level, sigma.x = sd(data), mu=mean)$conf.int
+  
 
   
   # Проверяем, ловит ли доверительный интервал истинное значение среднего
   if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
     asymptotic_captured <- asymptotic_captured + 1
   }
+  
+  
+  
 }
 
 
@@ -593,31 +599,12 @@ sd = 3      # Истинное стандартное отклонение би�
 
 # Начальные параметры
 confidence_level <- 0.95
-sample_size <- 100 # число эксперментальных животных
+sample_size <- 3 # число эксперментальных животных
 num_simulations <- 1000
 
-# Функция для создания доверительных интервалов
-create_confidence_interval <- function(data, confidence_level, method) {
-  sample_mean <- mean(data)
-  sample_sd <- sd(data)
-  sample_size <- length(data)
-  
-  if (method == "asymptotic") {
-    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
-    margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
-  } 
-  
-  if (method == "exact_t") {
-    t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
-    margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
-  } 
-  
-  
-  ci <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-  return(ci)
-}
 
-# Инициализируем переменные для подсчета количества 'попаданий' истинного среднего
+
+# Инициализируем переменную для подсчета количества "попаданий" истинного среднего 
 asymptotic_captured <- 0
 exact_t_captured <- 0
 
@@ -625,31 +612,25 @@ exact_t_captured <- 0
 for (i in 1:num_simulations) {
   data <- rnorm(sample_size, mean = mean, sd = sd)
   
-  # Рассчитываем доверительные интервалы для каждого метода
-  ci_asymptotic <- create_confidence_interval(data, confidence_level, "asymptotic")
-  ci_exact_t <- create_confidence_interval(data, confidence_level, "exact_t")
+  # Рассчитываем доверительный интервал 
+  ci_asymptotic <- z.test(x=data, conf.level = confidence_level, sigma.x = sd(data), mu=mean)$conf.int
+  ci_exact_unknown_var <- t.test(data, conf.level = confidence_level, var.equal = FALSE)$conf.int
   
   # Проверяем, ловит ли доверительный интервал истинное значение среднего
   if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
     asymptotic_captured <- asymptotic_captured + 1
   }
   
-  if (ci_exact_t[1] <= mean && ci_exact_t[2] >= mean) {
+  if (ci_exact_unknown_var[1] <= mean && ci_exact_unknown_var[2] >= mean) {
     exact_t_captured <- exact_t_captured + 1
   }
+  
 }
 
-# Выводим результаты
+
+# Выводим результат
 cat("Асимптотический ДИ - доля 'попаданий' истинного среднего    :", asymptotic_captured / num_simulations, "\n")
 cat("Точный ДИ (t-интервал) - доля 'попаданий' истинного среднего:", exact_t_captured / num_simulations, "\n")
-
-
-
-
-
-
-
-
 
 
 
@@ -700,50 +681,34 @@ confidence_level <- 0.95
 sample_size <- 3 # число эксперментальных животных
 num_simulations <- 1000  
 
-# Функция для создания доверительного интервала
-create_confidence_interval <- function(data, confidence_level, method) {
-  sample_mean <- mean(data)
-  sample_sd <- sd(data)
-  sample_size <- length(data)
-  
-  if (method == "asymptotic") {
-    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
-    margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
-  } 
-  
-  if (method == "exact_t") {
-    t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
-    margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
-  } 
-  
-  
-  ci <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
-  return(ci)
-}
 
-# Инициализируем переменные для подсчета количества 'попаданий' истинного среднего
+
+# Инициализируем переменную для подсчета количества "попаданий" истинного среднего 
 asymptotic_captured <- 0
 exact_t_captured <- 0
 
 # Цикл для симуляции num_simulations раз
 for (i in 1:num_simulations) {
+  data <- rnorm(sample_size, mean = mean, sd = sd)
   data <- rexp(sample_size, rate = 1/mean)
   
-  # Рассчитываем доверительные интервалы для каждого метода
-  ci_asymptotic <- create_confidence_interval(data, confidence_level, "asymptotic")
-  ci_exact_t <- create_confidence_interval(data, confidence_level, "exact_t")
+  # Рассчитываем доверительный интервал 
+  ci_asymptotic <- z.test(x=data, conf.level = confidence_level, sigma.x = sd(data), mu=mean)$conf.int
+  ci_exact_unknown_var <- t.test(data, conf.level = confidence_level, var.equal = FALSE)$conf.int
   
   # Проверяем, ловит ли доверительный интервал истинное значение среднего
   if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
     asymptotic_captured <- asymptotic_captured + 1
   }
   
-  if (ci_exact_t[1] <= mean && ci_exact_t[2] >= mean) {
+  if (ci_exact_unknown_var[1] <= mean && ci_exact_unknown_var[2] >= mean) {
     exact_t_captured <- exact_t_captured + 1
   }
+  
 }
 
-# Выводим результаты
+
+# Выводим результат
 cat("Асимптотический ДИ - доля 'попаданий' истинного среднего    :", asymptotic_captured / num_simulations, "\n")
 cat("Точный ДИ (t-интервал) - доля 'попаданий' истинного среднего:", exact_t_captured / num_simulations, "\n")
 
