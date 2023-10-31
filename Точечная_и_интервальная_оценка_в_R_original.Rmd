@@ -1,0 +1,2182 @@
+---
+title: "CI"
+author: "Oleg Arnaut"
+date: "2023-10-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+
+```
+
+# 1. Точечные оценки
+
+## 1.1 Средний уровень гемоглобина
+
+Параметры эксперимента
+
+```{r}
+# Истинный средний уровень в генеральной совокупности:
+m = 130
+
+# Количество пациентов в выборке
+n = 10
+
+```
+
+Как выглядит выборка?
+```{r}
+
+s <- round(rnorm(n,m,3),1)
+
+print(s)
+
+```
+
+```{r}
+
+m_est <- mean(s)
+
+est_out <- paste0('Средний уровень гемоглобина В ВЫБОРКЕ равен: ', round(m_est,3),  
+                  '\nОшибка в оценке равна: ', round(m_est-m,3))
+
+df <- data.frame(`Оценка среднего гемоглобина` = m_est, check.names = FALSE)
+
+plt <- ggplot(df, aes(x = `Оценка среднего гемоглобина`, y = 0)) +
+  geom_point() +
+  scale_x_continuous(limits = c(120, 140)) +
+  geom_vline(xintercept=m, linetype="dashed", color = "red") +
+  theme_bw()
+
+cat(est_out)
+plt
+
+```
+
+Если повторить это исследование 30 раз?
+
+```{r, echo=FALSE, fig.width=6, fig.height=5}
+
+m_est_30 <- sapply(1:30, function(k){
+  s <- round(rnorm(n,m,3),1)
+  mean(s)
+})
+
+df <- data.frame(`Оценка среднего гемоглобина` = m_est_30, 
+                 `Номер эксперимента` = 1:30, check.names = FALSE)
+
+plt <- ggplot(df, aes(x = `Оценка среднего гемоглобина`, 
+                      y = `Номер эксперимента`)) +
+  geom_point() +
+  scale_x_continuous(limits = c(120, 140)) +
+  scale_y_continuous(breaks = 1:30) +
+  geom_vline(xintercept=m, linetype="dashed", color = "red") +
+  theme_bw()
+
+plt
+
+```
+
+Поэкспериментируем с объемом выборки!
+
+```{r, echo=FALSE, fig.width=6, fig.height=5}
+n = 100
+
+m_est_30 <- sapply(1:30, function(k){
+  s <- round(rnorm(n,m,3),1)
+  mean(s)
+})
+
+df <- data.frame(`Оценка среднего гемоглобина` = m_est_30, 
+                 `Номер эксперимента` = 1:30, check.names = FALSE)
+
+plt <- ggplot(df, aes(x = `Оценка среднего гемоглобина`, 
+                      y = `Номер эксперимента`)) +
+  geom_point() +
+  scale_x_continuous(limits = c(120, 140)) +
+  scale_y_continuous(breaks = 1:30) +
+  geom_vline(xintercept=m, linetype="dashed", color = "red") +
+  theme_bw()
+
+plt
+
+```
+
+## 1.2 Описательные статистики для количественных переменных
+
+```{r}
+
+# Создаем набор данных
+data <- c(15, 23, 17, 32, 19, 25, 21, 28, 14, 30)
+
+# Среднее арифметическое (Mean)
+mean_value <- mean(data)
+
+# Медиана (Median)
+median_value <- median(data)
+
+# Мода (Mode) - для дискретных данных
+mode_value <- as.numeric(names(sort(table(data), decreasing = TRUE)[1]))
+
+# Минимум и максимум (Range)
+min_value <- min(data)
+max_value <- max(data)
+
+# Стандартное отклонение (Standard Deviation)
+sd_value <- sd(data)
+
+# Дисперсия (Variance)
+variance_value <- var(data)
+
+# Размах (Range)
+range_value <- max_value - min_value
+
+# Квантили (Quantiles)
+quantiles <- quantile(data, probs = c(0.25, 0.5, 0.75))
+
+# Вывод результатов
+cat("Среднее                :", mean_value, "\n")
+cat("Медиана                :", median_value, "\n")
+cat("Мода                   :", mode_value, "\n")
+cat("Минимум                :", min_value, "\n")
+cat("Максимум               :", max_value, "\n")
+cat("Стандартное отклонение :", sd_value, "\n")
+cat("Дисперсия              :", variance_value, "\n")
+cat("Размах                 :", range_value, "\n")
+cat("25-й квантиль          :", quantiles[1], "\n")
+cat("50-й квантиль (медиана):", quantiles[2], "\n")
+cat("75-й квантиль          :", quantiles[3], "\n")
+
+```
+
+
+## 1.3 Описательные статистики для категориальных переменных
+
+
+```{r}
+
+# Создаем набор данных для категориальной переменной
+data <- c("Категория A", "Категория B", "Категория A", "Категория C", "Категория B", "Категория A", "Категория A", "Категория B")
+
+# Частота (Frequency)
+frequency_table <- table(data)
+cat("Частота каждой категории:\n")
+print(frequency_table)
+cat("\n")
+
+# Относительная частота (Relative Frequency)
+relative_frequency <- prop.table(frequency_table)
+cat("Относительная частота каждой категории:\n")
+print(relative_frequency)
+cat("\n")
+
+```
+
+
+## 1.4 Описательные статистики для порядковых переменных
+
+
+```{r}
+
+# Создаем набор данных для порядковой переменной
+data <- c("Низкий", "Средний", "Высокий", "Средний", "Средний", "Низкий", "Высокий", "Средний")
+
+# Частота (Frequency)
+frequency_table <- table(data)
+cat("Частота каждой категории:\n")
+print(frequency_table)
+cat("\n")
+
+# Относительная частота (Relative Frequency)
+relative_frequency <- prop.table(frequency_table)
+cat("Относительная частота каждой категории:\n")
+print(relative_frequency)
+cat("\n")
+
+# Медиана (Median)
+# Соответствие между порядковыми значениями и числами
+ordered_values <- c("Низкий" = 1, "Средний" = 2, "Высокий" = 3)
+numeric_data <- ordered_values[data]
+
+median_value <- median(numeric_data)
+cat("Медиана:", median_value, "\n")
+
+```
+
+
+## 1.5 Зачем нужна визуализация? 
+
+```{r, fig.width=10, fig.height=5}
+
+
+# Создаем 2x2 макет для графиков
+par(mfrow=c(2, 2))
+
+# Устанавливаем параметры нормального распределения
+mean_normal <- 50
+sd_normal <- 10
+# Генерируем случайные данные для нормального распределения
+data_normal <- rnorm(10000, mean = mean_normal, sd = sd_normal)
+
+# График нормального распределения
+hist(data_normal, breaks = 30, col = 'blue', main = 'Нормальное Распределение (μ=50)', xlab = 'Значение', ylab = 'Частота')
+
+# Устанавливаем параметры равномерного распределения
+min_uniform <- 44.5
+max_uniform <- 55.5
+
+# Генерируем случайные данные для равномерного распределения
+data_uniform <- runif(10000, min = min_uniform, max = max_uniform)
+
+# График равномерного распределения
+hist(data_uniform, breaks = 30, col = 'green', main = 'Равномерное Распределение (μ=50)', xlab = 'Значение', ylab = 'Частота')
+
+# Устанавливаем параметры бимодального распределения
+mean1_bimodal <- 20
+sd1_bimodal <- 10
+mean2_bimodal <- 80
+sd2_bimodal <- 10
+
+# Генерируем случайные данные для бимодального распределения
+data_bimodal <- c(rnorm(10000, mean = mean1_bimodal, sd = sd1_bimodal), rnorm(5000, mean = mean2_bimodal, sd = sd2_bimodal))
+
+# График бимодального распределения
+hist(data_bimodal, breaks = 30, col = 'red', main = 'Бимодальное Распределение (μ=50)', xlab = 'Значение', ylab = 'Частота')
+
+# Генерируем данные для экспоненциального распределения с аналогичным средним и стандартным отклонением
+mean_exp <- 50
+sd_exp <- 10
+lambda_exp <- 1 / mean_exp
+
+data_exponential <- rexp(10000, rate = lambda_exp)
+
+# График экспоненциального распределения
+hist(data_exponential, breaks = 30, col = 'purple', main = 'Экспоненциальное Распределение (μ=50)', xlab = 'Значение', ylab = 'Частота')
+
+# Вывод макета
+par(mfrow=c(1, 1))
+
+
+```
+
+
+
+# 2. Интервальные оценки
+
+## 2.1 Квантили
+
+```{r}
+# Загрузка необходимого пакета ggplot2
+library(ggplot2)
+
+
+a <- c(0:100)
+
+cat(quantile(a, 0.025), 
+    quantile(a, 0.975))
+
+#?quantile
+
+
+# Создание случайного вектора данных
+data <- rnorm(1000000, mean = 0, sd = 1)
+data_df <- data.frame(Value = data)
+
+
+# Создание графика "ящик с усами" для данных
+ggplot(data = data_df, aes(x = "", y = Value)) +
+  geom_boxplot(fill = "lightblue", color = "blue") +
+  labs(x = "", y = "Значение") +
+  theme_minimal()
+
+
+# Преобразование данных в data frame
+data_df <- data.frame(Value = data)
+
+
+quantile1 <- 0.025   
+quantile2 <- 0.975  
+
+# Вычисление q1 и q2 квантилей
+q1 <- quantile(data, quantile1)
+q2 <- quantile(data, quantile2)
+
+# Создание графика плотности распределения с ggplot2
+ggplot(data = data_df, aes(x = Value)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  geom_vline(xintercept = c(q1, q2), linetype = "dashed", color = "red") +
+  annotate("text", x = q1-0.15, y = 0.3, label = sprintf("Q(%.1f)=%.2f", quantile1*100, q1), hjust = 1, angle = 90) +
+  annotate("text", x = q2-0.15, y = 0.2, label = sprintf("Q(%.1f)=%.2f", quantile2*100, q2), hjust = 0, angle = 90) +
+  labs(x = "Значение", y = "Плотность") +
+  theme_minimal()
+
+
+
+```
+## 2.2 Доверительный интервал для среднего
+
+
+### Асимптотический ДИ
+
+```{r}
+
+# Устанавливаем случайное зерно (для воспроизводимости результатов)
+set.seed(123)
+
+# Устанавливаем параметры нормального распределения
+mean = 20   # Среднее значение
+sd = 3      # Стандартное отклонение
+
+# Генерируем случайную выборку данных из нормального распределения
+data <- rnorm(10, mean = mean, sd = sd)
+
+# Уровень доверия
+confidence_level <- 0.95
+
+# Вычисляем выборочное среднее и выборочное стандартное отклонение
+sample_mean <- mean(data)  # Выборочное среднее
+sample_sd <- sd(data)      # Выборочное стандартное отклонение
+
+# Размер выборки
+sample_size <- length(data)  # Размер выборки
+
+# Z-интервал
+z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+ci_asymptotic <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+
+cat("Асимптотический метод (Z-интервал):", ci_asymptotic, "Ширина:", ci_asymptotic[2]-ci_asymptotic[1], "\n")
+
+
+```
+
+
+### Точный ДИ при известной дисперсии 
+
+```{r}
+
+# Устанавливаем случайное зерно (для воспроизводимости результатов)
+set.seed(123)
+
+# Устанавливаем параметры нормального распределения
+mean = 20   # Среднее значение
+sd = 3      # Стандартное отклонение
+
+# Генерируем случайную выборку данных из нормального распределения
+data <- rnorm(10, mean = mean, sd = sd)
+
+# Уровень доверия
+confidence_level <- 0.95
+
+# Вычисляем выборочное среднее
+sample_mean <- mean(data)  # Выборочное среднее
+
+# Размер выборки
+sample_size <- length(data)  # Размер выборки
+
+# Z-интервал (точный метод)
+z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+margin_of_error <- z_critical * (sd / sqrt(sample_size))
+ci_exact_z <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+
+cat("Точный метод (Z-интервал):", ci_exact_z, "Ширина:", ci_exact_z[2]-ci_exact_z[1], "\n")
+
+
+
+```
+
+### Точный ДИ при неизвестной дисперсии (Теорема Фишера) 
+
+```{r}
+
+# Устанавливаем случайное зерно (для воспроизводимости результатов)
+set.seed(123)
+
+# Устанавливаем параметры нормального распределения
+mean = 20   # Среднее значение
+sd = 3      # Стандартное отклонение
+
+# Генерируем случайную выборку данных из нормального распределения
+data <- rnorm(10, mean = mean, sd = sd)
+
+# Уровень доверия
+confidence_level <- 0.95
+
+# Вычисляем выборочное среднее и выборочное стандартное отклонение
+sample_mean <- mean(data)  # Выборочное среднее
+sample_sd <- sd(data)      # Выборочное стандартное отклонение
+
+# Размер выборки
+sample_size <- length(data)  # Размер выборки
+
+# t-интервал (точный метод)
+t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+ci_exact <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+
+cat("Точный метод (t-интервал):", ci_exact, "Ширина:", ci_exact[2]-ci_exact[1], "\n")
+
+
+
+
+```
+
+### Все вместе
+
+```{r}
+
+cat("Asymptotic Method (Z-interval):", ci_asymptotic, "Ширина:", ci_asymptotic[2]-ci_asymptotic[1], "\n")
+cat("Exact Method (Z-interval)     :", ci_exact_z, "Ширина:", ci_exact_z[2]-ci_exact_z[1], "\n")
+cat("Exact Method (t-interval)     :", ci_exact,      "Ширина:", ci_exact[2]-ci_exact[1], "\n")
+
+
+```
+
+Какой из них выбрать?
+
+### Доверительный интервал для среднего (симуляция)
+
+
+#### Asymptotic Method (Z-interval) 
+
+```{r}
+
+# Устанавливаем случайное зерно (для воспроизводимости результатов)
+set.seed(123)
+
+
+# Истинные значения в популяции 
+mean = 20
+sd = 3
+
+#Начальные параметры
+confidence_level <- 0.95
+sample_size <- 100
+num_simulations <- 1000
+
+# Функция для создания доверительного интервала
+create_confidence_interval <- function(data, confidence_level, method) {
+  sample_mean <- mean(data)
+  sample_sd <- sd(data)
+  sample_size <- length(data)
+  
+  if (method == "asymptotic") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+  } 
+  
+  
+  ci <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  return(ci)
+}
+
+# Инициализируем переменную для подсчета количества "попаданий" истинного среднего 
+asymptotic_captured <- 0
+
+
+# Цикл для симуляции num_simulations раз
+for (i in 1:num_simulations) {
+  data <- rnorm(sample_size, mean = mean, sd = sd)
+  
+  # Рассчитываем доверительный интервал для метода
+  ci_asymptotic <- create_confidence_interval(data, confidence_level, "asymptotic")
+
+  
+  # Проверяем, ловит ли доверительный интервал истинное значение среднего
+  if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
+    asymptotic_captured <- asymptotic_captured + 1
+  }
+  
+  
+}
+
+# Выводим результаты
+cat("Асимптотический ДИ - доля 'попаданий' истинного среднего    :", asymptotic_captured / num_simulations, "\n")
+
+
+```
+
+
+
+#### Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (Z-intervalt-interval), Exact Method (t-interval) в случае нормального распределения (симуляция)
+
+```{r}
+
+# Устанавливаем случайное зерно (для воспроизводимости результатов)
+set.seed(123)
+
+
+# Истинные значения в популяции 
+mean = 20
+sd = 3
+
+# Начальные параметры
+confidence_level <- 0.95
+sample_size <- 3
+num_simulations <- 1000
+
+# Функция для создания доверительных интервалов
+create_confidence_interval <- function(data, confidence_level, method) {
+  sample_mean <- mean(data)
+  sample_sd <- sd(data)
+  sample_size <- length(data)
+  
+  if (method == "asymptotic") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+  } 
+  
+  if (method == "exact_z") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (sd / sqrt(sample_size))
+  } 
+  
+  if (method == "exact_t") {
+    t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+    margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+  } 
+  
+  
+  ci <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  return(ci)
+}
+
+# Инициализируем переменные для подсчета количества 'попаданий' истинного среднего
+asymptotic_captured <- 0
+exact_z_captured <- 0
+exact_t_captured <- 0
+
+# Цикл для симуляции num_simulations раз
+for (i in 1:num_simulations) {
+  data <- rnorm(sample_size, mean = mean, sd = sd)
+  
+  # Рассчитываем доверительные интервалы для каждого метода
+  ci_asymptotic <- create_confidence_interval(data, confidence_level, "asymptotic")
+  ci_exact_z <- create_confidence_interval(data, confidence_level, "exact_z")
+  ci_exact_t <- create_confidence_interval(data, confidence_level, "exact_t")
+  
+  # Проверяем, ловит ли доверительный интервал истинное значение среднего
+  if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
+    asymptotic_captured <- asymptotic_captured + 1
+  }
+  
+  if (ci_exact_z[1] <= mean && ci_exact_z[2] >= mean) {
+    exact_z_captured <- exact_z_captured + 1
+  }
+  
+  if (ci_exact_t[1] <= mean && ci_exact_t[2] >= mean) {
+    exact_t_captured <- exact_t_captured + 1
+  }
+}
+
+# Выводим результаты
+cat("Асимптотический ДИ - доля 'попаданий' истинного среднего    :", asymptotic_captured / num_simulations, "\n")
+cat("Точный ДИ (Z-интервал) - доля 'попаданий' истинного среднего:", exact_z_captured / num_simulations, "\n")
+cat("Точный ДИ (t-интервал) - доля 'попаданий' истинного среднего:", exact_t_captured / num_simulations, "\n")
+
+```
+
+
+#### Сравнительная характеристика Asymptotic Method (Z-interval), Exact Method (Z-intervalt-interval), Exact Method (t-interval) в случае экспоненциального распределения (симуляция)
+
+
+```{r}
+
+# Истинный средний уровень в генеральной совокупности
+mean <- 10
+
+# Вычисляем λ для экспоненциального распределения
+lambda <- 1 / mean
+
+# Генерируем случайные данные из экспоненциального распределения с указанным λ
+data_exponential <- rexp(100, rate = lambda)
+
+# Средний уровень и стандартное отклонение в ВЫБОРКЕ
+actual_mean <- mean(data_exponential)
+actual_sd <- sd(data_exponential)
+
+
+cat("Средний уровень в ВЫБОРКЕ       :", actual_mean, "\n")
+cat("Стандартное отклонение в ВЫБОРКЕ:", actual_sd, "\n")
+
+hist(data_exponential)
+
+
+```
+
+
+```{r}
+
+# Устанавливаем случайное зерно (для воспроизводимости результатов)
+set.seed(123)
+
+# Истинные значения в популяции 
+mean = 20
+sd = 3
+
+# Начальные параметры
+confidence_level <- 0.95
+sample_size <- 150
+num_simulations <- 1000  
+
+# Функция для создания доверительного интервала
+create_confidence_interval <- function(data, confidence_level, method) {
+  sample_mean <- mean(data)
+  sample_sd <- sd(data)
+  sample_size <- length(data)
+  
+  if (method == "asymptotic") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (sample_sd / sqrt(sample_size))
+  } 
+  
+  if (method == "exact_z") {
+    z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+    margin_of_error <- z_critical * (round(sample_sd, 0) / sqrt(sample_size))
+  } 
+  
+  if (method == "exact_t") {
+    t_critical <- qt(1 - (1 - confidence_level) / 2, df = sample_size - 1)
+    margin_of_error <- t_critical * (sample_sd / sqrt(sample_size))
+  } 
+  
+  
+  ci <- c(sample_mean - margin_of_error, sample_mean + margin_of_error)
+  return(ci)
+}
+
+# Инициализируем переменные для подсчета количества 'попаданий' истинного среднего
+asymptotic_captured <- 0
+exact_z_captured <- 0
+exact_t_captured <- 0
+
+# Цикл для симуляции num_simulations раз
+for (i in 1:num_simulations) {
+  data <- rexp(sample_size, rate = 1/mean)
+  
+  # Рассчитываем доверительные интервалы для каждого метода
+  ci_asymptotic <- create_confidence_interval(data, confidence_level, "asymptotic")
+  ci_exact_z <- create_confidence_interval(data, confidence_level, "exact_z")
+  ci_exact_t <- create_confidence_interval(data, confidence_level, "exact_t")
+  
+  # Проверяем, ловит ли доверительный интервал истинное значение среднего
+  if (ci_asymptotic[1] <= mean && ci_asymptotic[2] >= mean) {
+    asymptotic_captured <- asymptotic_captured + 1
+  }
+  
+  if (ci_exact_z[1] <= mean && ci_exact_z[2] >= mean) {
+    exact_z_captured <- exact_z_captured + 1
+  }
+  
+  if (ci_exact_t[1] <= mean && ci_exact_t[2] >= mean) {
+    exact_t_captured <- exact_t_captured + 1
+  }
+}
+
+# Выводим результаты
+cat("Асимптотический ДИ - доля 'попаданий' истинного среднего    :", asymptotic_captured / num_simulations, "\n")
+cat("Точный ДИ (Z-интервал) - доля 'попаданий' истинного среднего:", exact_z_captured / num_simulations, "\n")
+cat("Точный ДИ (t-интервал) - доля 'попаданий' истинного среднего:", exact_t_captured / num_simulations, "\n")
+
+
+
+
+```
+
+### Пакетная реализация в R
+
+```{r}
+library(BSDA)
+
+# Создание данных для одной выборки
+set.seed(123)
+mean <- 20
+sd <- 3
+sample_size <- 10
+data <- rnorm(sample_size, mean = mean, sd = sd)
+
+# Уровень доверия
+confidence_level <- 0.95
+
+# Асимптотический доверительный интервал для среднего
+z_test_result <- z.test(x=data, conf.level = confidence_level, sigma.x = sd(data), mu = mean)
+ci_asymptotic <- z_test_result$conf.int
+cat("Асимптотический ДИ (Z-interval) для среднего                  :", ci_asymptotic, "\n")
+
+# Точный доверительный интервал для среднего (с известной дисперсией)
+z_test_result <- z.test(x=data, conf.level = confidence_level, sigma.x = sd, mu = mean)
+ci_exact_z <- z_test_result$conf.int
+cat("Точный ДИ (Z-interval) для среднего                           :", ci_exact_z, "\n")
+
+
+# Точный доверительный интервал для среднего (с неизвестной дисперсией)
+ci_exact_unknown_var <- t.test(data, conf.level = confidence_level, var.equal = FALSE)$conf.int
+cat("Точный ДИ (t-interval) для среднего (с неизвестной дисперсией):", ci_exact_unknown_var, "\n")
+
+
+```
+
+### От чего зависит ширина доверительного интервала?
+
+```{r}
+
+sample_size <- 30 # Количество пациентов, прошедших, терапию
+
+Hg_improve <- 20 # Истинное среднее изменение уровня Hg (в ГЕНЕРАЛЬНОЙ СОВОКУПНОСТИ)
+
+Hg_sd <- 12 # Разброс в улучшении Hg
+
+df_trial <- data.frame(
+  ID = 1:sample_size,
+  Hg_change = rnorm(sample_size, mean = Hg_improve, sd = Hg_sd)
+)
+
+#t.test(df_trial$Hg_change)
+
+trial_results <- df_trial %>% 
+  t.test(Hg_change ~ 1, conf.level = 0.95, data = .) %>% 
+  broom::tidy() %>% 
+  dplyr::select(estimate, conf.low, conf.high) %>% 
+  mutate(CI_width = conf.high - conf.low)
+
+trial_results
+  
+# Что происходит с ДИ при изменении:
+# - объема выборки?
+# - стандартного отклонения?
+# - уровня доверия?
+
+```
+
+## 2.3 Доверительный интервал для разницы средних
+
+### 2.3.1 Доверительный интервал для разницы средних (независимые выборки)
+
+```{r}
+
+# Воспроизведение данных
+set.seed(123)
+
+# Пример данных для двух независимых выборок
+mean1 = 20
+
+n1 = 10
+
+mean2 = 20
+n2 = 10
+
+sd = 3
+
+data1 <- rnorm(n1, mean = mean1, sd = sd)
+data2 <- rnorm(n2, mean = mean2, sd = sd)
+
+# Уровень доверия
+confidence_level <- 0.95
+
+```
+
+
+#### Асимптотический ДИ
+
+```{r}
+
+
+# Формируем 2 ВЫБОРКИ
+x <- data1
+y <- data2
+
+# Рассчитываем разницу в средних значениях
+diff <- mean(x) - mean(y)
+
+# Размеры выборок
+nx <- length(x)
+ny <- length(y)
+
+# Рассчитываем стандартное отклонение (SD)
+sd_x <- sd(x)
+sd_y <- sd(y)
+
+# Рассчитываем стандартную ошибку разницы средних значений
+diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+
+# Рассчитываем 95% доверительный интервал
+z <- qnorm(0.975)  # Для 95% доверительного интервала
+left_a <- diff - z * diff_sd
+right_a <- diff + z * diff_sd
+
+# Выводим на экран доверительный интервал
+cat("Асимптотический доверительный интервал [", round(left_a, 4), ";", round(right_a, 4), "] Ширина:", round(right_a - left_a, 4), "\n")
+
+
+
+# # Реализация в R
+# 
+# # Установите пакет "BSDA", если его еще нет (раскомментируйте и выполните эту строку)
+# # install.packages("BSDA")
+# 
+# # Загрузите библиотеку "BSDA"
+# library(BSDA)
+# 
+# # Выполните двухвыборочный Z-тест
+# 
+# z_test_result <- z.test(x, y, sigma.x = sd(x), sigma.y = sd(y))
+# 
+# # Выведите результат теста на экран
+# print(z_test_result)
+
+
+```
+
+#### Точный ДИ (Дисперсии извеcтны, разность средних в точности имеет нормальное распределение, итоговая статистика также имеет нормальное z распределение)
+
+
+```{r}
+
+
+# Формируем 2 ВЫБОРКИ
+x <- data1
+y <- data2
+
+# Рассчитываем разницу в средних значениях
+diff <- mean(x) - mean(y)
+
+# Размеры выборок
+nx <- length(x)
+ny <- length(y)
+
+# Рассчитываем стандартное отклонение (SD) В данном случае это SD ПОПУЛЯЦИИ!!!
+sd_x <- sd
+sd_y <- sd
+
+# Рассчитываем стандартную ошибку разницы средних значений
+diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+
+# Рассчитываем 95% доверительный интервал
+z <- qnorm(0.975)  # Для 95% доверительного интервала
+left_t1 <- diff - z * diff_sd
+right_t1 <- diff + z * diff_sd
+
+
+# Выводим на экран доверительный интервал
+cat("Точный доверительный интервал (известные дисперсии) [", round(left_t1, 4), ";", round(right_t1, 4), "] Ширина:", round(right_t1 - left_t1, 4), "\n")
+
+
+# # Реализация в R
+# 
+# # Установите пакет "BSDA", если его еще нет (раскомментируйте и выполните эту строку)
+# # install.packages("BSDA")
+# 
+# # Загрузите библиотеку "BSDA"
+# library(BSDA)
+# 
+# # Выполните двухвыборочный Z-тест
+# 
+# z_test_result <- z.test(x, y, sigma.x = sd, sigma.y = sd)
+# 
+# # Выведите результат теста на экран
+# print(z_test_result)
+
+
+
+
+```
+
+
+#### Точный ДИ (Дисперсии неизвеcтны но равны, статистика Стьюдента - распределение t)
+
+
+```{r}
+
+
+# Формируем 2 ВЫБОРКИ
+x <- data1
+y <- data2
+
+# Рассчитываем разницу в средних значениях
+diff <- mean(x) - mean(y)
+
+# Размеры выборок
+nx <- length(x)
+ny <- length(y)
+
+# Рассчитываем стандартное отклонение (SD) 
+sd_x <- sd(x)
+sd_y <- sd(y)
+
+
+# Степени свободы
+df1 <- nx - 1
+df2 <- ny - 1
+
+# Рассчитываем стандартную ошибку разницы средних значений
+diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+
+# Рассчитываем 95% доверительный интервал
+
+t_critical <- qt(1 - (1 - confidence_level) / 2, df1 + df2)
+
+left_t2 <- diff - t_critical * diff_sd
+right_t2 <- diff + t_critical * diff_sd
+
+
+
+# Выводим на экран доверительный интервал
+cat("Точный доверительный интервал (неизвестные дисперсии) [", round(left_t2, 4), ";", round(right_t2, 4), "] Ширина:", round(right_t2 - left_t2, 4), "\n")
+
+
+# # Реализация в R
+# t_result <- t.test(x, y, conf.level = 0.95, var.equal = TRUE)
+# ci_lower <- t_result$conf.int[1]
+# ci_upper <- t_result$conf.int[2]
+# 
+# 
+# # Выводим на экран доверительный интервал
+# cat("Точный доверительный интервал (неизвестные дисперсии) [", round(ci_lower, 4), ";", round(ci_upper, 4), "] Ширина:", round(ci_lower - ci_upper, 4), "\n")
+
+
+# library(car)
+# # Perform Levene's test
+# result <- leveneTest(c(x, y), as.factor(rep(c("Group1", "Group2"), each = nx)))
+# 
+# # Print the test result
+# print(result)
+
+```
+
+
+#### Примерный ДИ (Дисперсии не извеcтны и не равны)
+
+Получить распределение для такой статистики не представляется возможным - нерешённая проблема статистики (проблема Беренца-Фишера - невозможно точно сравнить средние двух независимых выборок, дисперсии которых неизвестны) - распределение приближённое (распределение Уэлча, работает хорошо если количество наблюдений в группах совпадает или для выборки с большей дисперсией мы собираем больше наблюдений))
+
+
+```{r}
+
+# mean1 = 20
+# 
+# n1 = 10
+# 
+# mean2 = 20
+# n2 = 10
+# 
+# sd = 3
+# 
+# 
+# data1 <- rexp(n1, rate = 1/mean1)
+# data2 <- rexp(n2, rate = 1/mean2)
+
+# Формируем 2 ВЫБОРКИ
+x <- data1
+y <- data2
+
+
+# Рассчитываем разницу в средних значениях
+diff <- mean(x) - mean(y)
+
+# Размеры выборок
+nx <- length(x)
+ny <- length(y)
+
+# Рассчитываем стандартное отклонение (SD) 
+sd_x <- sd(x)
+sd_y <- sd(y)
+
+
+# Рассчитываем стандартную ошибку разницы средних значений
+diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+
+
+# Степени свободы (Welch-Satterthwaite)
+numerator <- ((sd_x^2 / nx) + (sd_y^2 / n2))^2
+denominator <- (sd_x^4 / (nx^2 * (nx - 1))) + (sd_y^4 / (ny^2 * (ny - 1)))
+
+df <- numerator / denominator
+
+
+# Рассчитываем 95% доверительный интервал
+
+t_critical <- qt(1 - (1 - confidence_level) / 2, df)
+
+left_w <- diff - t_critical * diff_sd
+right_w <- diff + t_critical * diff_sd
+
+# Выводим на экран доверительный интервал
+cat("Доверительный интервал по Welch [", round(left_w, 4), ";", round(right_w, 4), "] Ширина:", round(right_w - left_w, 4), "\n")
+
+
+# # Реализация в R
+# 
+# t_result <- t.test(x, y, conf.level = 0.95, var.equal = FALSE)
+# ci_lower <- t_result$conf.int[1]
+# ci_upper <- t_result$conf.int[2]
+# 
+# cat("Доверительный интервал по Welch [", round(ci_lower, 4), ";", round(ci_upper, 4), "] Ширина:", round(ci_upper - ci_lower, 4), "\n")
+
+
+```
+
+
+#### Все вместе
+
+```{r}
+
+cat("Асимптотический доверительный интервал                [", round(left_a, 4), ";", round(right_a, 4), "] Ширина:", round(right_a - left_a, 4), "\n")
+
+cat("Точный доверительный интервал (известные дисперсии)   [", round(left_t1, 4), ";", round(right_t1, 4), "] Ширина:", round(right_t1 - left_t1, 4), "\n")
+
+cat("Точный доверительный интервал (неизвестные дисперсии) [", round(left_t2, 4), ";", round(right_t2, 4), "] Ширина:", round(right_t2 - left_t2, 4), "\n")
+
+## Распределение Бернулли (Р и 1-Р), где Р среднее и Р*(1-Р)/n дисперсия
+
+```
+
+
+
+
+
+#### Доверительный интервал для разницы средних (симуляция)
+
+
+##### Сравнительная характеристика (Asymptotic Confidence Interval, Exact Confidence Interval with Known Variances, Exact Confidence Interval with Unknown Variances, Confidence Interval by Welch в случае нормального распределения (независимые группы)
+
+```{r}
+
+# Воспроизведение данных
+set.seed(123)
+
+
+
+# Пример данных для двух независимых выборок
+mean1 <- 20
+sd <- 3
+mean2 <- 20
+n1 <- 3
+n2 <- 3
+
+# Уровень доверия
+confidence_level <- 0.95
+
+
+
+# Инициализируем переменные для подсчета 'попаданий' истинной разницы
+asymptotic_captured <- 0
+exact_known_variance_captured <- 0
+exact_unknown_variance_captured <- 0
+approximate_welch_captured <- 0
+
+# Цикл для симуляции 1000 раз
+for (i in 1:1000) {
+  # Генерируем случайные данные для двух выборок
+  data1 <- rnorm(n1, mean = mean1, sd = sd)
+  data2 <- rnorm(n2, mean = mean2, sd = sd)
+  
+  # Следующий блок кода для расчета каждого типа доверительного интервала
+  
+  # Асимптотический ДИ
+  x <- data1
+  y <- data2
+  diff <- mean(x) - mean(y)
+  nx <- length(x)
+  ny <- length(y)
+  sd_x <- sd(x)
+  sd_y <- sd(y)
+  diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+  z <- qnorm(0.975)
+  left_a <- diff - z * diff_sd
+  right_a <- diff + z * diff_sd
+  if (left_a <= 0 && right_a >= 0) {
+    asymptotic_captured <- asymptotic_captured + 1
+  }
+  
+  # Точный ДИ с известной дисперсией
+  x <- data1
+  y <- data2
+  diff <- mean(x) - mean(y)
+  nx <- length(x)
+  ny <- length(y)
+  sd_x <- sd
+  sd_y <- sd
+  diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+  z <- qnorm(0.975)
+  left_t1 <- diff - z * diff_sd
+  right_t1 <- diff + z * diff_sd
+  if (left_t1 <= 0 && right_t1 >= 0) {
+    exact_known_variance_captured <- exact_known_variance_captured + 1
+  }
+  
+  # Точный ДИ с неизвестной дисперсией
+  x <- data1
+  y <- data2
+  diff <- mean(x) - mean(y)
+  nx <- length(x)
+  ny <- length(y)
+  sd_x <- sd(x)
+  sd_y <- sd(y)
+  df1 <- n1 - 1
+  df2 <- n2 - 1
+  diff_sd <- sqrt(sd_x^2 / nx + sd_x^2 / ny)
+  t_critical <- qt(1 - (1 - confidence_level) / 2, df1 + df2)
+  left_t2 <- diff - t_critical * diff_sd
+  right_t2 <- diff + t_critical * diff_sd
+  if (left_t2 <= 0 && right_t2 >= 0) {
+    exact_unknown_variance_captured <- exact_unknown_variance_captured + 1
+  }
+  
+  # Примерный ДИ (Дисперсии не извеcтны и не равны)
+  x <- data1
+  y <- data2
+  diff <- mean(x) - mean(y)
+  nx <- length(x)
+  ny <- length(y)
+  sd_x <- sd(x)
+  sd_y <- sd(y)
+  diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+  numerator <- ((sd_x^2 / nx) + (sd_y^2 / n2))^2
+  denominator <- (sd_x^4 / (nx^2 * (nx - 1))) + (sd_y^4 / (ny^2 * (ny - 1)))
+  df <- numerator / denominator
+  t_critical <- qt(1 - (1 - confidence_level) / 2, df)
+  left_w_1 <- diff - t_critical * diff_sd
+  right_w_1 <- diff + t_critical * diff_sd
+  
+  t_result <- t.test(x, y, conf.level = 0.95, var.equal = FALSE)
+  left_w <- t_result$conf.int[1]
+  right_w <- t_result$conf.int[2]
+  
+  if (left_w <= 0 && right_w >= 0) {
+    approximate_welch_captured <- approximate_welch_captured + 1
+  }
+}
+
+# Выводим результаты
+cat("Асимптотический ДИ - доля 'попаданий' истинной разницы                             :", asymptotic_captured / 1000, "\n")
+cat("Точный ДИ с известной дисперсией - доля 'попаданий' истинной разницы               :", exact_known_variance_captured / 1000, "\n")
+cat("Точный ДИ с неизвестной дисперсией - доля 'попаданий' истинной разницы             :", exact_unknown_variance_captured / 1000, "\n")
+cat("Примерный ДИ (Дисперсии не извеcтны и не равны) - доля 'попаданий' истинной разницы:", approximate_welch_captured / 1000, "\n")
+
+
+```
+
+
+##### Сравнительная характеристика (Asymptotic Confidence Interval, Exact Confidence Interval with Known Variances, Exact Confidence Interval with Unknown Variances, Confidence Interval by Welch в случае экспоненциального распределения (независимые группы)
+
+
+
+
+```{r}
+
+# Воспроизведение данных
+set.seed(123)
+
+# Пример данных для двух независимых выборок
+mean1 <- 20
+#sd <- 3
+mean2 <- 20
+n1 <- 3
+n2 <- 3
+
+
+# Инициализируем переменные для подсчета 'попаданий' истинной разницы
+asymptotic_captured <- 0
+exact_known_variance_captured <- 0
+exact_unknown_variance_captured <- 0
+approximate_welch_captured <- 0
+
+# Цикл для симуляции 1000 раз
+for (i in 1:1000) {
+  # Генерируем случайные данные для двух выборок
+  #data1 <- rnorm(n1, mean = mean1, sd = sd)
+  #data2 <- rnorm(n2, mean = mean2, sd = sd)
+  data1 <- rexp(n1, rate = 1/mean1)
+  data2 <- rexp(n2, rate = 1/mean2)
+  
+  # Следующий блок кода для расчета каждого типа доверительного интервала
+  
+  # Асимптотический ДИ
+  x <- data1
+  y <- data2
+  diff <- mean(x) - mean(y)
+  nx <- length(x)
+  ny <- length(y)
+  sd_x <- sd(x)
+  sd_y <- sd(y)
+  diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+  z <- qnorm(0.975)
+  left_a <- diff - z * diff_sd
+  right_a <- diff + z * diff_sd
+  if (left_a <= 0 && right_a >= 0) {
+    asymptotic_captured <- asymptotic_captured + 1
+  }
+  
+  # Точный ДИ с известной дисперсией
+  x <- data1
+  y <- data2
+  diff <- mean(x) - mean(y)
+  nx <- length(x)
+  ny <- length(y)
+
+  sd_x <- round(sd_x, 0) # sd для такого распределения
+  sd_y <- round(sd_y, 0) # sd для такого распределения
+  diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+  z <- qnorm(0.975)
+  left_t1 <- diff - z * diff_sd
+  right_t1 <- diff + z * diff_sd
+  if (left_t1 <= 0 && right_t1 >= 0) {
+    exact_known_variance_captured <- exact_known_variance_captured + 1
+  }
+  
+  # Точный ДИ с неизвестной дисперсией
+  x <- data1
+  y <- data2
+  diff <- mean(x) - mean(y)
+  nx <- length(x)
+  ny <- length(y)
+  sd_x <- sd(x)
+  sd_y <- sd(y)
+  
+  df1 <- n1 - 1
+  df2 <- n2 - 1
+  diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+  t_critical <- qt(1 - (1 - confidence_level) / 2, df1 + df2)
+  left_t2 <- diff - t_critical * diff_sd
+  right_t2 <- diff + t_critical * diff_sd
+  if (left_t2 <= 0 && right_t2 >= 0) {
+    exact_unknown_variance_captured <- exact_unknown_variance_captured + 1
+  }
+  
+  # Примерный ДИ (Дисперсии не извеcтны и не равны)
+  x <- data1
+  y <- data2
+  diff <- mean(x) - mean(y)
+  nx <- length(x)
+  ny <- length(y)
+  sd_x <- sd(x)
+  sd_y <- sd(y)
+  diff_sd <- sqrt(sd_x^2 / nx + sd_y^2 / ny)
+  numerator <- ((sd_x^2 / nx) + (sd_y^2 / n2))^2
+  denominator <- (sd_x^4 / (nx^2 * (nx - 1))) + (sd_y^4 / (ny^2 * (ny - 1)))
+  df <- numerator / denominator
+  t_critical <- qt(1 - (1 - confidence_level) / 2, df)
+  left_w <- diff - t_critical * diff_sd
+  right_w <- diff + t_critical * diff_sd
+  
+  t_result <- t.test(x, y, conf.level = 0.95, var.equal = FALSE)
+  left_w <- t_result$conf.int[1]
+  right_w <- t_result$conf.int[2]
+  
+  if (left_w <= 0 || right_w >= 0) {
+    approximate_welch_captured <- approximate_welch_captured + 1
+  }
+}
+
+# Выводим результаты
+cat("Асимптотический ДИ - доля 'попаданий' истинной разницы                             :", asymptotic_captured / 1000, "\n")
+cat("Точный ДИ с известной дисперсией - доля 'попаданий' истинной разницы               :", exact_known_variance_captured / 1000, "\n")
+cat("Точный ДИ с неизвестной дисперсией - доля 'попаданий' истинной разницы             :", exact_unknown_variance_captured / 1000, "\n")
+cat("Примерный ДИ (Дисперсии не извеcтны и не равны) - доля 'попаданий' истинной разницы:", approximate_welch_captured / 1000, "\n")
+
+
+
+# similar principles apply when comparing confidence intervals for the difference in means versus confidence intervals for an individual mean. Here's how they compare:
+# 
+# Increased Variability: The difference in means has more variability compared to the mean of a single sample. When you calculate the difference, you're essentially combining the variability from both groups, which can result in a wider confidence interval.
+# 
+# Covariance: If you're calculating the difference in means for two groups, the covariance between the two groups can affect the width of the confidence interval. If the two groups are positively correlated, the confidence interval may be narrower. If they are negatively correlated, it may be wider.
+# 
+# Degrees of Freedom: The number of degrees of freedom in the calculation of a confidence interval for the difference in means is usually lower than when estimating a single mean. This is because you're estimating two means (from two samples) and possibly the variance of each group. Lower degrees of freedom result in wider confidence intervals.
+# 
+# Statistical Precision: When calculating a confidence interval for the difference in means, you're estimating the difference between two parameters. This generally results in less precise estimates compared to estimating a single mean, which leads to wider confidence intervals.
+# 
+# So, just like with proportions, you can expect that the confidence interval for the difference in means will be wider than the confidence interval for a single mean, primarily due to the increased variability, considerations related to covariance, and the impact of degrees of freedom. These principles are consistent with the statistical methodology used to estimate these intervals.
+
+
+
+#set.seed(123)
+
+num_simulations <- 1000
+n1 <- 3
+n2 <- 3
+true_mean1 <- 20
+true_mean2 <- 20
+true_diff <- true_mean1 - true_mean2
+
+sd=3
+
+alpha <- 0.05
+
+asymptotic_error_count <- 0
+approximate_welch_error_count <- 0
+
+for (i in 1:num_simulations) {
+  data1 <- rexp(n1, rate = 1/true_mean1)
+  data2 <- rexp(n2, rate = 1/true_mean2)
+  
+  data1 <- rnorm(n1, mean = true_mean1, sd = sd)
+  data2 <- rnorm(n2, mean = true_mean2, sd = sd)
+  
+  # Asymptotic estimation
+  t_result_asymptotic <- t.test(data1, data2, conf.level = 0.95, var.equal = TRUE)
+  conf_int_asymptotic <- t_result_asymptotic$conf.int
+  
+  # Approximate Welch's method
+  t_result_welch <- t.test(data1, data2, conf.level = 0.95, var.equal = FALSE)
+  conf_int_welch <- t_result_welch$conf.int
+  
+  # Check if asymptotic estimation contains the true mean
+  if (conf_int_asymptotic[1] < true_diff && conf_int_asymptotic[2] >= true_diff) {
+    asymptotic_error_count <- asymptotic_error_count + 1
+  }
+  
+  # Check if approximate Welch's method contains the true mean
+  if (conf_int_welch[1] < true_diff && conf_int_welch[2] > true_diff) {
+    approximate_welch_error_count <- approximate_welch_error_count + 1
+  }
+}
+
+asymptotic_error_rate <- asymptotic_error_count / num_simulations
+approximate_welch_error_rate <- approximate_welch_error_count / num_simulations
+
+cat("Частота ошибок для асимптотической оценки:", asymptotic_error_rate, "\n")
+cat("Частота ошибок для примерного метода Уэлча:", approximate_welch_error_rate, "\n")
+
+
+
+
+
+```
+
+
+### 2.3.2 Доверительный интервал для разницы средних (зависимые выборки)
+
+#### Точный ДИ (Дисперсия неизвеcтна аналогично одинарной средней, статистика Стьюдента - распределение t)
+
+
+
+## 2.4 Доверительный интервал для доли
+
+
+```{r}
+
+# # Распределение Бернулли (Р и 1-Р), где Р среднее и Р*(1-Р)/n дисперсия
+# sample_size <- 100 # Количество пациентов, прошедших терапию в каждой из групп
+# 
+# p_recovery <- 0.2 # Истинная вероятность выздоровления (в ГЕНЕРАЛЬНОЙ СОВОКУПНОСТИ)
+# 
+# df_trial <- data.frame(
+#   patient_ID = 1:sample_size,
+#   recovery_status = sample(c(1,0), sample_size, replace = TRUE, prob = c(p_recovery, 1 - p_recovery))
+# )
+# 
+# trial_results <- df_trial %>%
+#   count(recovery_status) %>%
+#   filter(recovery_status == 1) %>%
+#   rowwise() %>%
+#   dplyr::summarise(broom::tidy(prop.test(x = n, n = sample_size, conf.level = 0.95))) %>%
+#   dplyr::select(estimate, conf.low, conf.high)
+
+
+```
+
+
+
+### Асимптотический ДИ (Wald) и Точный ДИ (Clopper-Pearson) для доли
+
+```{r}
+
+# install.packages("binom")
+
+library(binom)
+
+??binom
+
+# Задайте размер выборки (n) и количество успешных наблюдений (x)
+n <- 10 # Размер выборки
+x <- 8 # Количество успешных наблюдений
+
+# Задайте уровень доверия (например, 95%)
+alpha <- 0.05
+
+# Рассчитайте доверительный интервал методом Клоппера-Пирсона
+pearson_ci <- binom.confint(x, n, method = "exact", conf.level = 1 - alpha)
+
+# Рассчитайте доверительный интервал методом Уолда
+wald_ci <- binom.confint(x, n, method = "asymptotic", conf.level = 1 - alpha)
+
+# Вывод результатов
+
+cat("Асимптотический ДИ (Метод Wald) для доли   : [", round(wald_ci$lower, 4), ";", round(wald_ci$upper, 4), "] Ширина:", wald_ci$upper - wald_ci$lower,"\n")
+cat("Точный ДИ (Метод Клоппера-Пирсона) для доли: [", round(pearson_ci$lower, 4), ";", round(pearson_ci$upper, 4), "] Ширина:", pearson_ci$upper - pearson_ci$lower,"\n")
+
+
+
+```
+
+
+
+### Метод Wald (симуляция) 
+
+
+```{r}
+
+#https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f
+
+# Воспроизведение данных
+set.seed(123)
+
+# waldInterval <- function(x, n, conf.level = 0.95){
+#  p <- x/n
+#  sd <- sqrt(p*((1-p)/n))
+#  z <-  qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) #returns the value of thresholds at which conf.level has to be cut at. for 95% CI, this is -1.96 and +1.96
+#  ci <- p + z*sd
+#  return(ci)
+#  }
+# #example
+# #waldInterval(x = 20, n =100) #this will return 0.345 and 0.655
+# 
+# 
+# numSamples <- 100                #number of samples to be drawn from population
+# numTrials <- 1000                #this is the sample size (size of each sample)
+# probs <- seq(0.001, 0.999, 0.001) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+# coverage <- as.numeric()         #initializing an empty vector to store coverage for each of the probs defined above
+# for (i in 1:length(probs)) {
+#  x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+#  isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+#  #since we have n different x here, we will have n different ci for #each of them. 
+#  for (j in 1:numSamples) {
+#  ci <- waldInterval(x = x[j], n = numTrials)
+#  isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+#  }
+#  coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+# }
+# 
+# 
+# plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Wald Interval',
+#  xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
+# abline(h = 95, lty=3, col='maroon', lwd=2)
+# axis(side = 2, at=seq(75,100, 5))
+
+
+
+waldInterval <- function(x, n, conf.level = 0.95){
+  p <- x/n
+  sd <- sqrt(p*((1-p)/n))
+  z <-  qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) # возвращает значения порогов, для соответствующего уровня доверия. Для 95% доверительного интервала это -1.96 и +1.96.
+  ci <- p + z*sd
+  return(ci)
+}
+
+numSamples <- 1000                # количество выборок для извлечения из популяции
+numTrials <- 100                   # размер выборки (размер каждой выборки)
+probs <- seq(0.1, 0.9, 0.1) # истинные пропорции в популяции. Для каждого значения в этом массиве будут построены 95% доверительные интервалы
+coverage <- as.numeric()          # инициализация пустого вектора для сохранения вероятности покрытия для каждой из заданных пропорций
+
+for (i in 1:length(probs)) {
+  x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) # взятие n случайных выборок и получение числа успешных исходов в каждой из n выборок. Таким образом, x здесь будет иметь длину n.
+  isCovered <- as.numeric() # вектор для обозначения, покрывается ли истинная пропорция популяции (probs[i]) в построенном интервале
+  # так как у нас есть n различных x здесь, у нас будет n разных интервалов для каждого из них.
+  
+  for (j in 1:numSamples) {
+    ci <- waldInterval(x = x[j], n = numTrials)
+    isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) # если истинная пропорция (probs[i]) покрывается в построенном доверительном интервале, то возвращается 1, иначе 0
+  }
+  
+  coverage[i] <- mean(isCovered)*100 # сохранение вероятности покрытия для каждой из истинных пропорций. Идеально для 95% доверительного интервала это должно быть ближе к 95%
+}
+
+plot(probs, coverage, type='l', ylim = c(60,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Вероятность покрытия истинной пропорции (интервал Уальда)',
+     xlab = 'Истинная пропорция (пропорция в популяции)', ylab = 'Вероятность покрытия (%) для 95% ДИ')
+abline(h = 95, lty=3, col='maroon', lwd=2)
+axis(side = 2, at=seq(60,100, 5))
+
+
+```
+
+
+### Метод Clopper — Pearson (симуляция)
+
+```{r}
+
+# Воспроизведение данных
+set.seed(123)
+
+# numSamples <- 100 #number of samples to be drawn from population
+# numTrials <- 1000 #this is the sample size (size of each sample)
+# probs <- seq(0.001, 0.999, 0.001) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+# coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+# for (i in 1:length(probs)) {
+#  x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+#  isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+#  #since we have n different x here, we will have n different ci for #each of them. 
+#  for (j in 1:numSamples) {
+#  ci <- binom.test(x = x[j], n = numTrials)$conf
+#  isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+#  }
+#  coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+# }
+# plot(probs, coverage, type='l', ylim = c(75,100), col='blue', lwd=2, frame.plot = FALSE, yaxt='n', main = 'Coverage of Clopper — Pearson',
+#  xlab = 'True Proportion (Population Proportion) ', ylab = 'Coverage (%) for 95% CI')
+# abline(h = 95, lty=3, col='maroon', lwd=2)
+# axis(side = 2, at=seq(75,100, 5))
+
+
+numSamples <- 1000 # количество выборок, которые будут взяты из популяции
+numTrials <- 100 # это размер каждой выборки
+
+probs <- seq(0.1, 0.9, 0.1) # истинные пропорции в популяции. Для каждого значения в этом массиве мы построим 95% доверительные интервалы
+
+coverage <- as.numeric() # инициализация пустого вектора для сохранения вероятности покрытия для каждой из пропорций, заданных выше
+
+for (i in 1:length(probs)) {
+  x <- rbinom(n = numSamples, size = numTrials, prob = probs[i]) # взятие n случайных выборок и получение числа успешных исходов в каждой из n выборок. Таким образом, x здесь будет иметь длину n.
+
+  isCovered <- as.numeric() # булев вектор для обозначения, покрывается ли истинная пропорция в популяции (probs[i]) в построенных доверительных интервалах
+
+  # так как у нас есть n различных x здесь, у нас будет n разных доверительных интервалов для каждого из них.
+
+  for (j in 1:numSamples) {
+    ci <- binom.test(x = x[j], n = numTrials)$conf # вычисление доверительного интервала Clopper–Pearson для каждой выборки и извлечение из него доверительного интервала
+
+    isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) # если истинная пропорция (probs[i]) покрывается в построенном доверительном интервале, то возвращается 1, иначе 0
+  }
+
+  coverage[i] <- mean(isCovered) * 100 # запись вероятности покрытия для каждой из истинных пропорций. Идеально для 95% доверительного интервала это должно быть ближе к 95%
+}
+
+plot(probs, coverage, type = 'l', ylim = c(75, 100), col = 'blue', lwd = 2, frame.plot = FALSE, yaxt = 'n', main = 'Вероятность покрытия истинной пропорции (интервал Clopper–Pearson)',
+     xlab = 'Истинная пропорция (пропорция в популяции)', ylab = 'Вероятность покрытия (%) для 95% ДИ')
+
+abline(h = 95, lty = 3, col = 'maroon', lwd = 2) # добавление горизонтальной пунктирной линии на уровне 95% для сравнения
+
+axis(side = 2, at = seq(75, 100, 5)) # добавление оси координат на график
+
+
+
+
+
+
+```
+
+
+
+### Точность для ДИ Wald и ДИ Clopper-Pearson
+
+```{r}
+
+# Воспроизведение данных
+# set.seed(123)
+
+library(binom)
+
+# Истинное значение доли
+true_p <- 0.5
+
+# Размер выборки и количество повторений симуляции
+n <- 10
+num_simulations <- 1000
+
+# Инициализация счетчиков для подсчета успешных симуляций
+wald_success_count <- 0
+pearson_success_count <- 0
+
+# Цикл для проведения симуляции
+for (i in 1:num_simulations) {
+  # Генерация случайной выборки из биномиального распределения
+  sample_data <- rbinom(n, 1, true_p)
+  
+  # Рассчет доверительных интервалов
+  wald_ci <- binom.confint(sum(sample_data), n, method = "asymptotic", conf.level = 0.95)
+  pearson_ci <- binom.confint(sum(sample_data), n, method = "exact", conf.level = 0.95)
+  
+  # Проверка, ловит ли интервал истинное значение
+  if (true_p >= wald_ci$lower && true_p <= wald_ci$upper) {
+    wald_success_count <- wald_success_count + 1
+  }
+  if (true_p >= pearson_ci$lower && true_p <= pearson_ci$upper) {
+    pearson_success_count <- pearson_success_count + 1
+  }
+}
+
+# Подсчет процента успешных симуляций
+wald_success_rate <- wald_success_count / num_simulations * 100
+pearson_success_rate <- pearson_success_count / num_simulations * 100
+
+# Вывод результатов
+cat("ДИ Wald 'поймал' истинное значение доли в            ", wald_success_rate, "% симуляций.\n")
+cat("ДИ Clopper-Pearson 'поймал' истинное значение доли в ", pearson_success_rate, "% симуляций.\n")
+
+
+
+
+```
+
+
+
+## 2.5 Доверительный интервал для разницы долей
+
+```{r, warning=FALSE}
+
+
+# Пример данных
+success_group1 <- 1
+total_group1 <- 10
+success_group2 <- 1
+total_group2 <- 10
+
+
+# Вычисление асимптотического доверительного интервала для разницы долей (независимые выборки)
+asym_ci <- prop.test(x = c(success_group1, success_group2), n = c(total_group1, total_group2))
+asym_lower <- round(asym_ci$conf.int[1], 2)
+asym_upper <- round(asym_ci$conf.int[2], 2)
+
+
+# Вычисление точного доверительного интервала для разницы долей (независимые выборки)
+# Установите и загрузите пакет ExactCIdiff
+# install.packages('ExactCIdiff')
+library(ExactCIdiff)
+
+# Точный доверительного интервала для разницы долей (независимые выборки)
+exact_ci <- BinomCI(total_group1,total_group2,success_group1,success_group2, CItype='Two.sided')
+exact_lower <- round(exact_ci$ExactCI[1], 2)
+exact_upper <- round(exact_ci$ExactCI[2], 2)
+
+# Вывод результатов в одной строке с указанием ширины интервалов и самих значений
+cat("Асимптотический ДИ:", asym_lower, asym_upper, "Ширина:", asym_upper - asym_lower, "\n")
+cat("Точный ДИ:        :", exact_lower, exact_upper, "Ширина:", exact_upper - exact_lower, "\n")
+
+
+
+# Вычисление точного доверительного интервала для разницы долей (зависимые выборки)
+#install.packages('ExactCIdiff')
+
+library(ExactCIdiff)
+
+n12 = 11
+t = 9
+n21 = 0
+
+
+#n12 - количество субъектов в попарном исследовании, которые достигли успеха от лечения и неудачи от контроля.
+#t   - количество субъектов в попарном исследовании, которые имеют одинаковые результаты от лечения и контроля, t = n11 + n22.
+#n21 - количество субъектов в попарном исследовании, которые достигли успеха от контроля и неудачи от лечения.
+
+
+result <- PairedCI(n12, t, n21, CItype = 'Two.sided')
+cat("Точный доверительный интервал для разницы долей (зависимые выборки)", round(result$ExactCI[1], 2), round(result$ExactCI[2], 2), ", Ширина:", round(result$ExactCI[2] - result$ExactCI[1], 2), "\n")
+
+
+
+
+```
+
+
+
+### Точность ДИ
+
+```{r, warning=FALSE}
+
+
+# install.packages("ExactCIdiff")
+library(ExactCIdiff)
+
+
+# Задаем параметры генеральной совокупности
+true_p1 <- 0.1
+true_p2 <- 0.1
+true_p <- true_p1 - true_p2
+
+sample_size <- 10 # Размер выборки
+n_simulations <- 1000  # Количество симуляций
+
+# Инициализируем счетчики для оценки, сколько раз ДИ поймали истинное значение
+asymptotic_hits <- 0
+exact_hits <- 0
+
+
+? rbinom
+
+# Симулируем множество выборок и оцениваем ДИ
+for (i in 1:n_simulations) {
+  # Создаем случайные выборки с заданными параметрами
+  sample1 <- rbinom(sample_size, size = 1, prob = true_p1)
+  sample2 <- rbinom(sample_size, size = 1, prob = true_p2)
+  
+  
+  # Вычисляем оценки долей
+  success_group1 <- sum(sample1)
+  total_group1 <- sample_size
+  success_group2 <- sum(sample2)
+  total_group2 <- sample_size
+  
+  # Вычисляем асимптотический ДИ
+  asym_ci <- prop.test(x = c(success_group1, success_group2), n = c(total_group1, total_group2), alternative = "two.sided", -# Вычисляем точный ДИ
+  exact_ci <- BinomCI(total_group1, total_group2, success_group1, success_group2, CItype = "Two.sided")
+  
+  
+  # Проверяем, ловят ли ДИ истинное значение
+  if (true_p >= asym_ci$conf.int[1] && true_p <= asym_ci$conf.int[2]) {
+    asymptotic_hits <- asymptotic_hits + 1
+  }
+  if (true_p >= exact_ci$ExactCI[1] && true_p <= exact_ci$ExactCI[2]) {
+    exact_hits <- exact_hits + 1
+  }
+}
+
+# Оцениваем, сколько раз ДИ поймали истинное значение
+cat("Aсимптотический ДИ:", asymptotic_hits / n_simulations, "\n")
+cat("Точный ДИ          :", exact_hits / n_simulations, "\n")
+
+
+# The width of a confidence interval (CI) for the difference between two proportions is often larger than the width of a CI for a single proportion. This is due to the fact that when you calculate a CI for the difference between two proportions, you are essentially propagating the uncertainty from both proportions into the estimate of their difference.
+# 
+# Here's why the CI for the difference is generally wider:
+# 
+# Increased Variability: The difference between two proportions is more variable than an individual proportion. When you calculate the difference, you are subtracting one value from another, which can magnify the variability.
+# 
+# Covariance: The CI for the difference takes into account the covariance between the two proportions. If there is a negative correlation between the two proportions, the CI will be wider because the two proportions tend to move in opposite directions. If there is a positive correlation, the CI may be narrower.
+# 
+# Degrees of Freedom: When calculating CIs for individual proportions, you have more degrees of freedom because you are estimating one parameter. In contrast, when calculating the CI for the difference, you are estimating two parameters, which leads to fewer degrees of freedom, resulting in a wider CI.
+# 
+# Statistical Precision: When calculating a CI for an individual proportion, you are estimating a single parameter, and the CI reflects the precision of that estimate. When calculating the difference, you are estimating two parameters, which can lead to less precise estimates and wider CIs.
+# 
+# In summary, it's normal for the CI for the difference between proportions to be wider than the CI for a single proportion due to the increased variability and considerations related to the covariance between the proportions. This is a characteristic of the statistical methodology used to estimate these intervals.
+
+
+```
+
+
+
+## 2.6 Доверительный интервал для отношение шансов (OR) 
+
+
+```{r, warning=FALSE}
+
+
+# https://search.r-project.org/CRAN/refmans/epitools/html/oddsratio.html
+
+
+library(epitools)
+
+# Создайте 2x2 таблицу данных для анализа
+# Замените эти значения своими собственными данными
+table_data <- matrix(c(9, 1, 1, 9), nrow = 2)
+
+# Добавьте имена строк и столбцов для ясности
+rownames(table_data) <- c("Группа A", "Группа B")
+colnames(table_data) <- c("Успех", "Неудача")
+
+# Создайте 2x2 таблицу сопряженности
+contingency_table <- as.table(table_data)
+
+
+# 'fisher' для условной оценки максимального правдоподобия (Fisher)
+# 'wald' для безусловной оценки максимального правдоподобия (Wald)
+
+
+result_fisher <- oddsratio.fisher(contingency_table)
+result_wald <- oddsratio.wald(contingency_table)
+
+
+# Вывести результаты
+cat("Отношение шансов (Fisher):", result_fisher$measure[2], "\n")
+cat("Доверительный интервал (Fisher):", result_fisher$measure[4], result_fisher$measure[6], "\n")
+cat("ширина Доверительного интервала (Fisher):", result_fisher$measure[6] - result_fisher$measure[4], "\n\n")
+
+cat("Отношение шансов (Wald):", result_wald$measure[2], "\n")
+cat("Доверительный интервал (Wald):", result_wald$measure[4], result_wald$measure[6], "\n")
+cat("ширина Доверительного интервала (Wald):", result_wald$measure[6] - result_wald$measure[4], "\n\n")
+
+
+```
+
+
+
+```{r}
+
+sample_size <- 1000 # Количество пациентов, прошедших терапию в каждой из групп
+
+p_R <- 0.2 # Истинная вероятность выздоровления для референса (в ГЕНЕРАЛЬНОЙ СОВОКУПНОСТИ)
+
+p_T <- 0.1 # Истинная вероятность выздоровления для теста (в ГЕНЕРАЛЬНОЙ СОВОКУПНОСТИ)
+
+df_trial <- data.frame(
+  arm = rep(c('R', 'T'), each = sample_size),
+  patient_ID = rep(1:sample_size, 2),
+  recovery_status = c(sample(c(1,0), sample_size, replace = TRUE, prob = c(p_R, 1 - p_R)),
+                      sample(c(1,0), sample_size, replace = TRUE, prob = c(p_T, 1 - p_T)))
+)
+
+trial_results <- df_trial %>% 
+  count(arm, recovery_status) %>% 
+  pivot_wider(names_from = recovery_status, values_from = n) %>% 
+  dplyr::select(-arm) %>% 
+  fisher.test(conf.level = 0.95) %>% 
+  broom::glance()
+
+print(trial_results)
+
+
+```
+
+
+
+## 2.7 Односторонние доверительные интервалы (исследования неменьшей эффективности или превосходства)
+
+```{r}
+
+
+sample_size <- 100 # Количество пациентов, прошедших, терапию
+
+Hg_improve <- 20 # Истинное среднее изменение уровня Hg (в ГЕНЕРАЛЬНОЙ СОВОКУПНОСТИ)
+
+Hg_sd <- 6 # Разброс в улучшении Hg
+
+Hg_change <- rnorm(sample_size, 
+                   mean = Hg_improve, 
+                   sd = Hg_sd) # На сколько изменился Hg у пациентов?
+
+# Меряем, на сколько изменилось давление после терапии:
+result <- t.test(Hg_change, 
+                 conf.level = 0.95)
+
+cat('Двусторонний ДИ::', result$conf.int, "\n")
+
+result <- t.test(Hg_change, 
+                 conf.level = 0.95, 
+                 alternative = 'greater')
+cat('Односторонний ДИ:', result$conf.int, "\n")
+
+
+# Попробуйте правосторонний ДИ:
+
+result <- t.test(Hg_change, 
+                 conf.level = 0.95, 
+                 alternative = 'less')
+cat('Односторонний ДИ:', result$conf.int, "\n")
+
+
+```
+
+#__________________________________________________________
+
+# Проверка статистических гипотез
+
+
+```{r}
+#https://machinelearningmastery.com/statistical-hypothesis-tests-in-python-cheat-sheet/
+
+#https://analyse-it.com/docs/user-guide/101/estimation
+
+#https://analyse-it.com/docs/user-guide/101/exact-asymptotic-p-values#:~:text=A%20p%2Dvalue%20calculated%20using,about%20the%20hypothesis%20of%20interest.
+
+
+#https://statistics.laerd.com/statistical-guides/mann-whitney-u-test-assumptions.php#:~:text=Assumption%20%234%3A%20You%20must%20determine,shape%20or%20a%20different%20shape. Mann Withney
+x <- c(5,  5,  5,  4)
+y <- c(0, 0, 0, 0)
+wilcox.test(x, y, paired = FALSE, alternative = "greater")
+
+
+
+
+
+```
+
+
+# Chi squared with bootstrap
+
+```{r}
+#https://search.r-project.org/CRAN/refmans/DCluster/html/achisq.boot.html
+
+install.packages('spdep')
+install.packages('DCluster')
+
+library(boot)
+library(spdep)
+library(DCluster)
+
+data(nc.sids)
+
+sids<-data.frame(Observed=nc.sids$SID74)
+sids<-cbind(sids, Expected=nc.sids$BIR74*sum(nc.sids$SID74)/sum(nc.sids$BIR74))
+
+niter<-1000
+
+# Define the achisq.boot statistic function
+# achisq.boot <- function(data, indices) {
+#   observed <- data$Observed[indices]
+#   expected <- data$Expected[indices]
+#   chi_square <- sum((observed - expected)^2 / expected)
+#   return(chi_square)
+# }
+
+
+#Permutation  model
+chq.perboot<-boot(sids, statistic=achisq.boot, R=niter)
+plot(chq.perboot)#Display results
+
+#Multinomial model
+chq.mboot<-boot(sids, statistic=achisq.pboot, sim="parametric", ran.gen=multinom.sim,  R=niter)
+plot(chq.mboot)#Display results
+
+#Poisson model
+chq.pboot<-boot(sids, statistic=achisq.pboot, sim="parametric", ran.gen=poisson.sim,  R=niter)
+plot(chq.pboot)#Display results
+
+#Poisson-Gamma model
+chq.pgboot<-boot(sids, statistic=achisq.pboot, sim="parametric", ran.gen=negbin.sim, R=niter)
+plot(chq.pgboot)#Display results
+
+
+```
+
+```{r}
+
+#https://livebook.manning.com/book/r-in-action/chapter-12/1 - permutation and bootstrepping
+
+#https://www.rdocumentation.org/packages/RDS/versions/0.8-1/topics/bootstrap.contingency.test
+
+# https://www.tandfonline.com/doi/full/10.1080/10543406.2014.920851?scroll=top&needAccess=true
+
+
+if(!require('RDS')) {
+    install.packages('RDS')
+    library('RDS')
+}
+
+data(faux)
+
+bootstrap.contingency.test(rds.data=faux, row.var="X", col.var="Y",
+  number.of.bootstrap.samples=1000, verbose=FALSE)
+
+data(faux)
+convergence.plot(faux,c("X","Y"))
+
+
+
+
+```
+
+
+```{r}
+
+install.packages("boot")
+
+
+
+```
+
+
+
+
+```{r}
+
+waldInterval <- function(x, n, conf.level = 0.95){
+ p <- x/n
+ sd <- sqrt(p*((1-p)/n))
+ z <- qnorm(c( (1 - conf.level)/2, 1 - (1-conf.level)/2)) #returns the value of thresholds at which conf.level has to be cut at. for 95% CI, this is -1.96 and +1.96
+ ci <- p + z*sd
+ return(ci)
+ }
+#example
+waldInterval(x = 20, n =40) #this will return 0.345 and 0.655
+
+
+numSamples <- 10000 #number of samples to be drawn from population
+numTrials <- 100 #this is the sample size (size of each sample)
+
+probs <- seq(0.001, 0.999, 0.01) #true proportions in prevalence. #for each value in this array, we will construct 95% confidence #intervals
+coverage <- as.numeric() #initializing an empty vector to store coverage for each of the probs defined above
+for (i in 1:length(probs)) {
+ x <- rbinom(n = numSamples, size=numTrials, prob = probs[i]) #taken #n random samples and get the number of successes in each of the n #samples. thus x here will have a length equal to n
+ isCovered <- as.numeric() #a boolean vector to denote if the true #population proportion (probs[i]) is covered within the constructed ci
+ #since we have n different x here, we will have n different ci for #each of them. 
+ for (j in 1:numSamples) {
+ ci <- binom.test(x = x[j], n = numTrials)$conf
+ isCovered[j] <- (ci[1] < probs[i]) & (probs[i] < ci[2]) #if the #true proportion (probs[i]) is covered within the constructed CI, #then it returns 1, else 0
+ }
+ coverage[i] <- mean(isCovered)*100 #captures the coverage for each #of the true proportions. ideally, for a 95% ci, this should be more #or else 95%
+}
+
+
+
+# Create the plot
+plot(probs, coverage, type="l", ylim = c(75,100), col="blue", lwd=2, frame.plot = FALSE, yaxt='n', main = "Coverage of Wald Interval",
+     xlab = "True Proportion (Population Proportion)", ylab = "Coverage (%) for 95% CI")
+abline(h = 95, lty=3, col="maroon", lwd=2)
+axis(side = 2, at=seq(75,100, 5))
+     
+
+
+
+```
+
+
+
+```{r}
+
+
+
+# Define your data
+SCALE_1 <- c(3, 5, 5, 4, 4, 3, 4, 2, 2, 3, 2, 1, 1, 2, 0, 2, 5, 4, 5, 4, 0, 0, 0, 0)
+SCALE_2 <- c(2, 2, 3, 2, 2, 1, 2, 3, 2, 1, 1, 2, 2, 1, 1, 1, 3, 3, 2, 3, 0, 0, 0, 0)
+
+
+# Create a data frame with your data
+my_data_frame <- data.frame(SCALE_1 = SCALE_1, SCALE_2 = SCALE_2)
+print(my_data_frame)
+
+my_data_frame$SCALE_1 <- factor(my_data_frame$SCALE_1, levels = c(0, 1, 2, 3, 4, 5), labels = c("Изменений нет",
+                                                                                                "Единичные", 
+                                                                                                "Кольцо 1 слой",
+                                                                                                "Кольцо 2 слоя",
+                                                                                                "Кольцо 3 слоя",
+                                                                                                "Кольцо 4 и > слоёв"))
+
+my_data_frame$SCALE_2 <- factor(my_data_frame$SCALE_2, levels = c(0, 1, 2, 3), labels = c("Изменений нет",
+                                                                                       "Лёгкая", 
+                                                                                       "Умеренная",
+                                                                                       "Выраженная"))
+
+# Print the data frame
+print(my_data_frame)
+
+df3 <- my_data_frame %>% 
+  group_by(SCALE_1, SCALE_2) %>% 
+  tally() %>% 
+  complete(SCALE_2, fill = list(n = 0)) %>% 
+  mutate(percentage = n / sum(n) * 100)
+
+
+ggplot(df3, aes(SCALE_1, percentage, fill = SCALE_2)) + 
+  geom_bar(stat = 'identity', position = 'dodge') +
+  ylim(0, 100)+
+  ylab("%")+
+  scale_fill_brewer(palette = "Set2")+
+  theme(legend.position = "right", axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+# 1. convert the data as a table
+dt <- as.matrix(table(my_data_frame$SCALE_1, my_data_frame$SCALE_2))
+dt
+
+#dt
+# 2. Graph
+#balloonplot(t(dt), xlab ="", ylab="",
+#            label = FALSE, 
+#            repel = TRUE,
+#            show.margins = FALSE)
+
+chisq <- chisq.test(dt)
+chisq
+
+res.ca <- FactoMineR::CA(dt, graph = FALSE)
+# inspect results of the CA
+#print(res.ca)
+eig.val <- get_eigenvalue(res.ca)
+eig.val
+
+# repel= TRUE to avoid text overlapping (slow if many point)
+fviz_ca_biplot(res.ca, 
+               repel = TRUE,
+               col.row = "orange",
+               col.col = "darkgray")
+
+```
+
+
+
+
+```{r}
+
+library(ggplot2)
+
+# Set a seed for reproducibility
+set.seed(123)
+
+# Generate synthetic data with a Pearson correlation of 0.85
+correlation <- 0.85
+n <- 100  # Number of data points
+
+# Generate IL1 and TNF variables
+IL1 <- rnorm(n)
+TNF <- correlation * IL1 + sqrt(1 - correlation^2) * rnorm(n)
+
+# Create a data frame
+data <- data.frame(IL1, TNF)
+
+# Calculate the Pearson correlation coefficient
+pearson_corr <- cor(data$IL1, data$TNF)
+
+# Create a scatter plot with increased font size
+ggplot(data, aes(x = IL1, y = TNF)) +
+  geom_point() +
+  labs(title = paste("Pearson Correlation =", round(pearson_corr, 2))) +
+  theme(
+    text = element_text(size = 12),  # Adjust the font size
+    axis.text.x = element_text(size = 12),  # Adjust x-axis label font size
+    axis.text.y = element_text(size = 12),  # Adjust y-axis label font size
+    plot.title = element_text(size = 14)  # Adjust title font size
+  )
+
+```
+
+
+
+```{r}
+
+
+# Load the required libraries
+library(ggplot2)
+
+# Sample data with a U-shaped relationship
+x <- seq(-2, 2, length.out = 100)
+y <- x^2 + rnorm(100)
+data <- data.frame(X = x, Y = y)
+
+# Create a scatter plot
+ggplot(data, aes(x = X, y = Y)) +
+  geom_point() +
+  labs(x = "X-axis", y = "Y-axis", title = "Scatter Plot of a U-Shaped Relationship")
+
+
+
+```
+
+
+
+```{r}
+
+# Load the required libraries
+library(ggplot2)
+
+# Fictitious preclinical research data with a U-shaped relationship
+dose <- seq(-2, 2, length.out = 100)  # Dose levels
+response <- x^2 + rnorm(100)  # Response with a U-shaped pattern
+
+data <- data.frame(Dose = dose, Response = response)
+
+# Create a scatter plot
+ggplot(data, aes(x = Dose, y = Response)) +
+  geom_point() +
+  labs(x = "Dose", y = "Response", title = "Scatter Plot of Dose vs. Response (U-Shaped Relationship)")
+
+
+correlation <- cor(data$Dose, data$Response)
+
+
+ggplot(data, aes(x = Dose, y = Response)) +
+  geom_point() +
+  labs(x = "Dose", y = "Response", title = "Scatter Plot of Dose vs. Response (U-Shaped Relationship)") +
+  annotate("text", x = 0, y = max(data$Response), 
+           label = paste("Pearson Correlation =", round(correlation, 2)), 
+           hjust = 0, vjust = 1)
+
+```
+
+
+
+
+
