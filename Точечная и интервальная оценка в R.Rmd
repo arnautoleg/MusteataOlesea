@@ -515,7 +515,7 @@ confidence_level <- 0.95
 
 # Точный доверительный интервал для среднего (с неизвестной дисперсией)
 ci_exact_unknown_var <- t.test(data, conf.level = confidence_level, var.equal = FALSE)$conf.int
-cat("Точный ДИ (t-interval) для среднего (с неизвестной дисперсией):", ci_exact_unknown_var, "Ширина:", ci_exact[2]-ci_exact[1], "\n")
+cat("Точный ДИ (t-interval) для среднего (с неизвестной дисперсией):", ci_exact_unknown_var, "Ширина:", ci_exact_unknown_var[2]-ci_exact_unknown_var[1], "\n")
 
 
 ```
@@ -525,7 +525,7 @@ cat("Точный ДИ (t-interval) для среднего (с неизвест
 ```{r}
 
 cat("Асимптотический ДИ (Z-interval) для среднего                  :", ci_asymptotic, "Ширина:", ci_asymptotic[2]-ci_asymptotic[1],"\n")
-cat("Точный ДИ (t-interval) для среднего (с неизвестной дисперсией):", ci_exact_unknown_var, "Ширина:", ci_exact[2]-ci_exact[1], "\n")
+cat("Точный ДИ (t-interval) для среднего (с неизвестной дисперсией):", ci_exact_unknown_var, "Ширина:", ci_exact_unknown_var[2]-ci_exact_unknown_var[1], "\n")
 
 
 ```
@@ -865,7 +865,7 @@ cat("Доверительный интервал по Welch        [", round(ci_
 #### Доверительный интервал для разницы средних (симуляция)
 
 
-##### Сравнительная характеристика (Asymptotic Confidence Interval, Exact Confidence Interval with Known Variances, Exact Confidence Interval with Unknown Variances, Confidence Interval by Welch в случае нормального распределения (независимые группы)
+##### Сравнительная характеристика (Asymptotic Confidence Interval, Confidence Interval by Welch) в случае нормального распределения (независимые группы)
 
 ```{r}
 
@@ -925,8 +925,7 @@ cat("Примерный ДИ (Дисперсии не извеcтны и не р
 ```
 
 
-##### Сравнительная характеристика (Asymptotic Confidence Interval, Exact Confidence Interval with Known Variances, Exact Confidence Interval with Unknown Variances, Confidence Interval by Welch в случае экспоненциального распределения (независимые группы)
-
+##### Сравнительная характеристика (Asymptotic Confidence Interval, Confidence Interval by Welch) в случае экспоненциального распределения (независимые группы)
 
 
 
