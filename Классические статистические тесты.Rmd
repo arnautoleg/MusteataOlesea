@@ -26,7 +26,7 @@ library(BSDA)
 library(ggplot2)
 
 # Create a sequence of x values
-x_values <- seq(-3, 3, by = 0.01)
+x_values <- seq(-4, 4, by = 0.01)
 
 # Calculate the PDF values for the standard normal distribution
 pdf_normal <- dnorm(x_values, mean = 0, sd = 1)
@@ -84,7 +84,7 @@ ggplot(pmf_data, aes(x = factor(x), y = Probability)) +
 library(ggplot2)
 
 # Define the parameters of the binomial distribution
-n <- 10  # Number of trials
+n <- 100  # Number of trials
 p <- 0.2  # Probability of success in each trial
 
 # Create a sequence of possible values for the number of successes
@@ -247,7 +247,7 @@ library(ggplot2)
 
 #?quantile
 
-observed=-4
+observed=5
 
 # Создание последовательности значений x
 x_values <- seq(-4, 4, by = 0.01)
@@ -256,7 +256,7 @@ x_values <- seq(-4, 4, by = 0.01)
 pdf_normal <- dnorm(x_values, mean = 0, sd = 1)
 
 # Квантили
-quantiles <- c(0.05, 1)
+quantiles <- c(0.025, 0.975)
 
 quantile_values <- qnorm(quantiles, mean = 0, sd = 1)
 
@@ -286,10 +286,10 @@ library(ggplot2)
 
 #?quantile
 
-observed=-4
+observed=5
 
 # Define the degrees of freedom for the t-distribution
-df <- 99  # Degrees of freedom
+df <- 55  # Degrees of freedom
 
 # Create a sequence of x values
 x_values <- seq(-4, 4, by = 0.01)  # Adjust the range and step size as needed
@@ -298,7 +298,7 @@ x_values <- seq(-4, 4, by = 0.01)  # Adjust the range and step size as needed
 pdf_t <- dt(x_values, df)
 
 # Квантили
-quantiles <- c(0.05, 1)
+quantiles <- c(0.025, 0.975)
 
 #quantile_values <- qnorm(quantiles, mean = 0, sd = 1)
 
@@ -317,11 +317,12 @@ ggplot(pdf_data, aes(x = x)) +
   annotate("text", x = t_critical_low-0.15, y = 0.2, label = sprintf("Q(%.3f)=%.2f", quantiles[1], t_critical_low), hjust = 0, angle = 90) +
   annotate("text", x = t_critical_up-0.15, y = 0.2, label = sprintf("Q(%.3f)=%.2f", quantiles[2], t_critical_up), hjust = 0, angle = 90) +
   annotate("text", x = observed-0.15, y = 0.2, label = 'observed', hjust = 0, angle = 90)+
-  annotate("text", x = 2.5, y = 0.6, label = sprintf("df(%.0f)", df), hjust = 0)+
+  annotate("text", x = 2.5, y = 0.4, label = sprintf("df(%.0f)", df), hjust = 0)+
   labs(title = "PDF распределения Стьюдента", x = "x", y = "Плотность вероятности")
 
 
 ```
+
 
 ### Реализация в R
 
@@ -418,10 +419,10 @@ library(ggplot2)
 
 #?quantile
 
-observed=-4
+observed=0.15
 
 # Define the degrees of freedom for the t-distribution
-df <- 99  # Degrees of freedom
+df <- 4 # Degrees of freedom
 
 # Create a sequence of x values
 x_values <- seq(-4, 4, by = 0.01)  # Adjust the range and step size as needed
@@ -430,7 +431,7 @@ x_values <- seq(-4, 4, by = 0.01)  # Adjust the range and step size as needed
 pdf_t <- dt(x_values, df)
 
 # Квантили
-quantiles <- c(0.05, 1)
+quantiles <- c(0.025, 0.975)
 
 #quantile_values <- qnorm(quantiles, mean = 0, sd = 1)
 
@@ -452,10 +453,30 @@ ggplot(pdf_data, aes(x = x)) +
   annotate("text", x = 2.5, y = 0.6, label = sprintf("df(%.0f)", df), hjust = 0)+
   labs(title = "PDF распределения Стьюдента", x = "x", y = "Плотность вероятности")
 
+?z.test
+?var()
 
 ```
 
- 
+
+```{r}
+
+sd_x = 6
+nx   = 10
+sd_y = 4
+ny   = 10
+
+# Степени свободы (Welch-Satterthwaite)
+numerator <- ((sd_x^2 / nx) + (sd_y^2 / ny))^2
+denominator <- (sd_x^4 / (nx^2 * (nx - 1))) + (sd_y^4 / (ny^2 * (ny - 1)))
+
+df <- numerator / denominator
+
+df
+
+```
+
+
 ### Реализация в R
  
 ```{r}
@@ -498,7 +519,7 @@ library(ggplot2)
 
 #?quantile
 
-observed=-2
+observed=1
 
 # Создание последовательности значений x
 x_values <- seq(-4, 4, by = 0.01)
@@ -507,7 +528,7 @@ x_values <- seq(-4, 4, by = 0.01)
 pdf_normal <- dnorm(x_values, mean = 0, sd = 1)
 
 # Квантили
-quantiles <- c(0.05, 1)
+quantiles <- c(0.025, 0.975)
 
 quantile_values <- qnorm(quantiles, mean = 0, sd = 1)
 
@@ -536,10 +557,10 @@ ggplot(pdf_data, aes(x = x)) +
 library(ggplot2)
 
 # Определение параметров биномиального распределения
-n <- 10   # Количество испытаний
-p <- 0.5  # Вероятность успеха в каждом испытании (истина)
+n <- 100   # Количество испытаний
+p <- 0.5   # Вероятность успеха в каждом испытании (истина)
 
-наблюдаемые = 5
+наблюдаемые = 70
 
 # Создание последовательности возможных значений числа успехов
 x_values <- 1:n
@@ -551,7 +572,7 @@ pmf_binomial <- dbinom(x_values, size = n, prob = p)
 pmf_data <- data.frame(x = x_values, Вероятность = pmf_binomial)
 
 # Квантили
-квантили <- c(0.025, 0.975)
+квантили <- c(0, 0.95)
 
 # Расчет критических значений (квантилей)
 critical_value_left <- qbinom(квантили[1], size = n, prob = p)
@@ -577,26 +598,52 @@ ggplot(pmf_data, aes(x = factor(x), y = Вероятность)) +
 
 ```{r}
 
-# Данные 
-successes <- 30
-trials <- 50
+library(BSDA)
 
-# Точный биномиальный тест
-exact_binom_test <- binom.test(successes, trials, alternative = "two.sided")
+# Aсимптотический тест
+# Sample data
+n <- 100  # Total number of trials
+x <- 70   # Number of successes
 
-# Асимптотический тест для доли
-asymptotic_prop_test <- prop.test(successes, trials, alternative = "two.sided")
+# Null hypothesis value (usually 0.5 for a two-sided test)
+p0 <- 0.5
 
-# Вывести результаты
-print("Точный биномиальный тест:")
-print(exact_binom_test)
+# Create the binary sample
+sample <- c(rep(1, x), rep(0, n - x))
 
-print("\nАсимптотический тест для доли:")
-print(asymptotic_prop_test)
+# Shuffle the sample to randomize the order
+
+sample <- sample(binary_sample)
+
+stdev <- sqrt(p0*(1-p0))
+
+# Perform the z-test
+z_test_result <- BSDA::z.test(sample, mu = p0, alternative = "two.sided", sigma.x=stdev)
+
+# Print the test result
+print(z_test_result)
+
+
+# Точный тест
+?binom.test()
+
+# Number of trials (sample size)
+n <- 100
+
+# Expected proportion
+expected_proportion <- 0.5
+
+# Number of successes (observed)
+observed_successes <- 70
+
+# Perform the binomial test
+binom_test_result <- binom.test(observed_successes, n, p = expected_proportion, alternative = "two.sided")
+
+# Print the test result
+print(binom_test_result)
 
 
 ```
-
 
 
 ## Гипотезы о разнице долей
@@ -648,49 +695,75 @@ ggplot(pdf_data, aes(x = x)) +
 
 ```{r}
 
-# Данные
-success_group1 <- 30
-total_group1 <- 50
+# Aсимптотический тест для независимых выборок
 
-success_group2 <- 40
-total_group2 <- 50
+# # Исходные данные для выборки 1
+# n1 <- 100  # Общее количество попыток
+# x <- 20   # Количество успешных исходов
+# 
+# # Исходные данные для выборки 2
+# n2 <- 100  # Общее количество попыток
+# y <- 40   # Количество успешных исходов
+# 
+# # Расчет доли успешных исходов в выборке 1
+# p1 <- x / n1
+# 
+# # Расчет доли успешных исходов в выборке 2
+# p2 <- y / n2
+# 
+# # Расчет объединенной доли успешных исходов
+# P <- (x + y) / (n1 + n2)
+# 
+# # Расчет стандартной ошибки
+# SQ <- P * (1 - P) * (1/n1 + 1/n2)
+# 
+# # Выполнение z-теста
+# z_test_result <- (p1 - p2) / sqrt(SQ)
+# 
+# # Вывод результата теста
+# print(z_test_result)
 
-# Z-критерий для разности долей для независимых выборок
-z_test_independent <- prop.test(c(success_group1, success_group2), c(total_group1, total_group2), alternative = "two.sided", correct = )
+##################################################################
 
-# Вывести результат
-print("Z-критерий для разности долей для независимых выборок:")
-print(z_test_independent)
+
+# Функция для проведения z-теста для двух долей
+performTwoProportionZTest <- function(n1, x, n2, y) {
+  # Расчет долей успешных исходов в выборках
+  p1 <- x / n1
+  p2 <- y / n2
+
+  # Расчет объединенной доли успешных исходов
+  P <- (x + y) / (n1 + n2)
+
+  # Расчет стандартной ошибки
+  SQ <- P * (1 - P) * (1/n1 + 1/n2)
+
+  # Выполнение z-теста
+  z_test_result <- (p1 - p2) / sqrt(SQ)
+
+  return(z_test_result)
+}
+
+# Использование функции:
+n1 <- 100  # Общее количество попыток для выборки 1
+x <- 20   # Количество успешных исходов для выборки 1
+
+n2 <- 100  # Общее количество попыток для выборки 2
+y <- 40   # Количество успешных исходов для выборки 2
+
+z_test_result <- performTwoProportionZTest(n1, x, n2, y)
+print(z_test_result)
+
 
 
 
 ```
 
 
-```{r}
-
-# Данные 
-success_before <- c(15, 20)
-total_before <- c(25, 30)
-
-success_after <- c(25, 28)
-total_after <- c(30, 30)
-
-# Z-критерий для разности долей для зависимых выборок
-z_test_dependent <- prop.test(matrix(c(success_after, success_before, total_after - success_after, total_before - success_before), ncol = 2), 
-                              alternative = "two.sided", correct = FALSE)
-
-# Вывести результат
-print("Z-критерий для разности долей для зависимых выборок:")
-print(z_test_dependent)
+# Гипотезы о дисперсии
 
 
-```
-
-## Гипотезы о дисперсии
-
-
-### 𝝌^𝟐 – критерий для дисперсии (точный)
+### Chi squared – критерий для дисперсии (точный)
 
 
 ```{r}
@@ -777,7 +850,7 @@ ggplot(pdf_data, aes(x = x, y = Probability)) +
   geom_vline(xintercept = c(critical_value_lower, critical_value_upper, observed_f_value),
              linetype = c("solid", "solid", "dashed"),
              color = c("blue", "blue", "red"),
-             size = c(2, 2, 2)) +
+             linewidth = c(2, 2, 2)) +
   annotate("text", x = critical_value_lower-0.15, y = 0.2, label = sprintf("Q(%.3f)=%.2f", quantiles[1], critical_value_lower), hjust = 0, angle = 90) +
   annotate("text", x = critical_value_upper-0.15, y = 0.2, label = sprintf("Q(%.3f)=%.2f", quantiles[2], critical_value_upper), hjust = 0, angle = 90) +
   annotate("text", x = observed_f_value-0.15, y = 0.2, label = 'наблюдаемое', hjust = 0, angle = 90) +
@@ -830,7 +903,7 @@ if (t_test_result$p.value < 0.05) {
 
 ```
 
-#=========================================================================================
+=========================================================================================
 
 # Квантили
 
