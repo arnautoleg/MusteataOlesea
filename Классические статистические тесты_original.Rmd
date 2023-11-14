@@ -1562,6 +1562,7 @@ contingency_table <- table(exposure, outcome)
 print(contingency_table)
 
 
+
 ```
 
 На такой дизайн направлен тест Фишера
@@ -1591,18 +1592,16 @@ Chi squared работает хорошо!!!
 
 ```{r}
 
-# x <- matrix(c(12, 7, 7, 0), ncol = 3)
+# x <- matrix(c(12, 7, 7, 0), ncol = 2)
 # chisq.test(x)$p.value           
 # chisq.test(x, simulate.p.value = TRUE, B = 10000)$p.value
 
 
-x <- matrix(c(103, 81, 69, 18,
-              339, 548, 220, 36,
-              9, 19,5, 0), ncol = 3)
+x <- matrix(c(9, 1, 1, 9), ncol = 2)
 chisq.test(x)   
 
 # Выполните тест хи-квадрат
-chi_square_test <- chisq.test(x)
+chi_square_test <- chisq.test(x, simulate.p.value = TRUE, B = 2000)
 
 # Извлеките стандартизированные остатки
 std_residuals <- as.table(chi_square_test$residuals)
@@ -1631,7 +1630,7 @@ H0: Вероятность события до воздействия равна
 
 # Пример данных с двумя категориальными переменными (до и после воздействия)
 
-my_matrix <- matrix(c(100, 10, 5, 100), nrow = 2, ncol = 2, dimnames = list(c("Ринит +", "Ринит -"), c("Ринит +", "Ринит -")))
+my_matrix <- matrix(c(9, 1, 1, 9), nrow = 2, ncol = 2, dimnames = list(c("Ринит +", "Ринит -"), c("Ринит +", "Ринит -")))
 
 # Вывод таблицы сопряженности
 print(my_matrix)
